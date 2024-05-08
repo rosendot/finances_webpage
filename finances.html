@@ -16,67 +16,87 @@
     <button class="update-totals-btn">Update Totals</button>
     <button class="update-csv-btn">Update CSV</button>
 
-    <div class="table-grid">
-        <div class="table-wrapper">
-            <h5 class="table-title">Manual Payments</h5>
-            <table id="manual-payments" class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Amount</th>
-                        <th>Date</th>
-                        <th>Include</th>
-                    </tr>
-                </thead>
-                <tbody class="table-body"></tbody>
-            </table>
-        </div>
-        <div class="table-wrapper">
-            <h5 class="table-title">Recurring Payments</h5>
-            <table id="recurring-payments" class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Amount</th>
-                        <th>Date</th>
-                        <th>Include</th>
-                    </tr>
-                </thead>
-                <tbody class="table-body"></tbody>
-            </table>
-        </div>
-        <div class="table-wrapper">
-            <h5 class="table-title">Revenue</h5>
-            <table id="revenue" class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Amount</th>
-                        <th>Date</th>
-                        <th>Include</th>
-                    </tr>
-                </thead>
-                <tbody class="table-body"></tbody>
-            </table>
-        </div>
-        <div class="table-wrapper">
-            <h5 class="table-title">Other</h5>
-            <table id="other" class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Person</th>
-                        <th>Goal</th>
-                        <th>Saved</th>
-                        <th>Percentage</th>
-                    </tr>
-                </thead>
-                <tbody class="table-body"></tbody>
-            </table>
+    <div class="page-counter">
+        <button class="page-btn" data-page="1">1</button>
+        <button class="page-btn" data-page="2">2</button>
+    </div>
+    <div class="page" id="page-1">
+        <div class="table-grid">
+            <div class="table-wrapper">
+                <h5 class="table-title">Manual Payments</h5>
+                <table id="manual-payments" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Include</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-body"></tbody>
+                </table>
+            </div>
+            <div class="table-wrapper">
+                <h5 class="table-title">Recurring Payments</h5>
+                <table id="recurring-payments" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Include</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-body"></tbody>
+                </table>
+            </div>
+            <div class="table-wrapper">
+                <h5 class="table-title">Revenue</h5>
+                <table id="revenue" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Include</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-body"></tbody>
+                </table>
+            </div>
+            <div class="table-wrapper">
+                <h5 class="table-title">Other</h5>
+                <table id="other" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Person</th>
+                            <th>Goal</th>
+                            <th>Saved</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-body"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <div class="chart-container">
-        <canvas id="finances-chart"></canvas>
+    <div class="page" id="page-2" style="display: none;">
+        <div class="chart-grid">
+            <div class="chart-wrapper">
+                <h5 class="chart-title">Payments Distribution</h5>
+                <canvas id="payments-chart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <!-- Empty grid item -->
+            </div>
+            <div class="chart-wrapper">
+                <!-- Empty grid item -->
+            </div>
+            <div class="chart-wrapper">
+                <!-- Empty grid item -->
+            </div>
+        </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

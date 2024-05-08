@@ -1,37 +1,36 @@
 Revenue,,,
-Name,Amount,Date,Include
-Paycheck,2391.84,04-17-2024,No
-Bank Account,2391.84,05-02-2024,No
-Bounce House,0,,No
-Facebook Marketplace,0,,No
+Name, Amount ,Date,Include
+Paycheck, 2391.84, 05-02-2024, Yes
+Bank Account, 6250.00, 06-02-2024, Yes
+Facebook Marketplace, 0.00, , No
 ,,,
-Recurring-payments,,,
-Name,Amount,Date,Include
-Trufit,25.98,04-21-2024,No
-Ezequiel Trufit,10.82,04-21-2024,No
-Christian Trufit,10.82,04-21-2024,No
-Prime,69.00,04-24-2024,No
-Spotify,6.36,04-25-2024,No
-Christian Spotify,11.68,04-26-2024,No
-Crunchyroll,10.81,04-28-2024,No
-Game Pass,18.05,05-02-2024,No
-Brother's Game Pass,18.05,05-02-2024,No
-Adobe,21.24,05-06-2024,No
-Netflix,24.43,05-17-2024,No
-Car Payment,420.31,05-29-2024,No
-Costco,60.00,02-01-2025,No
+Recurring,,,
+Name, Amount ,Date,Include
+Trufit, 25.98, 05-21-2024, Yes
+Ezequiel Trufit, 10.82, 05-21-2024, Yes
+Christian Trufit, 10.82, 05-21-2024, Yes
+Spotify, 6.36, 05-25-2024, Yes
+Christian Spotify, 11.68, 05-26-2024, Yes
+Crunchyroll, 10.81, 05-28-2024, Yes
+Game Pass, 18.05, 06-02-2024, No
+Brother's Game Pass, 18.05, 06-02-2024, No
+Adobe, 21.24, 06-06-2024, No
+Netflix, 24.43, 05-17-2024, No
+Car Payment, 420.31, 05-29-2024, No
+Costco, 60.00, 02-01-2025, No
+Prime, 69.00, 04-24-2025, No
 ,,,
-Manual-payments,,,
-Name,Amount,Date,Include
-Groceries,0,,No
-Credit Card,320.00,,Yes
-Passport,0,,No
-ID,0,,No
-TV Stand,35,05-12-2024,Yes
-Dresser,0,05-12-2024,Yes
+Manual,,,
+Name, Amount ,Date,Include
+Groceries, 0.00, , No
+Discover Credit Card, 200.00, , No
+Savor One Credit Card, 0.00, , No
+Passport, 0.00, , No
+Texas ID, 0.00, , No
+Rent, 981.00, , No
 ,,,
 Other,,,
-Person,Goal,Saved,
-Mom's Citizenship,0,0,0.00
-Dad's Citizenship,0,0,0.00
+Person, Goal , Saved ,
+Mom's Citizenship, 0.00, 0.00, 0.00%
+Dad's Citizenship, 0.00, 0.00, 0.00%
 ,,,

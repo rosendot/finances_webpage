@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
 
 app.post('/update-csv', (req, res) => {
     const csvContent = req.body.csvContent;
-    const directory = 'C:/Users/rosen/Finances';
+    const directory = 'C:/Users/rosen/Documents/Finances';
     const filePath = path.join(directory, 'finances.csv');
 
     // Create the directory if it doesn't exist

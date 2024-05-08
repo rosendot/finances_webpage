@@ -6,7 +6,6 @@
 
 .table-wrapper {
     text-align: center;
-    padding: 10px;
 }
 
 table {
@@ -26,15 +25,39 @@ td {
     padding: 8px;
 }
 
-.chart-container {
-    width: 800px;
-    height: 400px;
-    margin: 0 auto;
-}
-
 .update-dates-btn,
 .update-csv-btn,
 .update-totals-btn {
     padding: 5px 5px;
     font-size: 10px;
+}
+
+.editable-cell {
+    width: 100%;
+    border: none;
+    background-color: transparent;
+    padding: 0;
+    text-align: inherit;
+}
+
+.page-counter {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.page-btn {
+    padding: 5px 10px;
+    margin: 0 5px;
+    font-size: 16px;
+}
+
+.chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 20px;
+}
+
+.chart-wrapper {
+    text-align: center;
+    padding: 10px;
 }
