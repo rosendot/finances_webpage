@@ -11,4 +11,9 @@ app.get('*', (req, res) => {
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
+    if (process.env.NODE_ENV === 'development') {
+        import('open').then((open) => {
+            open.default(`http://localhost:${port}`, { app: 'chrome' });
+        });
+    }
 });
