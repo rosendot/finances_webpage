@@ -1,25 +1,33 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from 'react';
+import { fetchFinances } from './api';
 
-function App() {
+const App = () => {
+  const [finances, setFinances] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await fetchFinances();
+        console.log('data', data)
+        setFinances(data);
+      } catch (err) {
+        console.error('Error fetching finances data:', err);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <h1>Finances Webpage</h1>
+      <ul>
+        {finances.map((item) => (
+          <li key={item.id}>{/* Display relevant data */}</li>
+        ))}
+      </ul>
     </div>
   );
-}
+};
 
 export default App;
