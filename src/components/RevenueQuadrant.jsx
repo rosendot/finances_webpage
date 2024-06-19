@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Checkbox } from '@mui/material';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Checkbox, TextField } from '@mui/material';
 
 import formatDate from '../functions/formatDate';
 
-const RevenueTable = ({ revenueData, onRevenueIncludeChange }) => {
+const RevenueQuadrant = ({ revenueData, onRevenueIncludeChange, onRevenueAmountChange }) => {
     const [sortedRevenueData, setSortedRevenueData] = useState([]);
 
     useEffect(() => {
@@ -22,6 +22,10 @@ const RevenueTable = ({ revenueData, onRevenueIncludeChange }) => {
         onRevenueIncludeChange(revenue);
     };
 
+    const handleAmountChange = (revenue, amount) => {
+        onRevenueAmountChange(revenue, amount);
+    };
+
     return (
         <TableContainer component={Paper}>
             <Table>
@@ -37,7 +41,13 @@ const RevenueTable = ({ revenueData, onRevenueIncludeChange }) => {
                     {sortedRevenueData.map((revenue) => (
                         <TableRow key={revenue.name}>
                             <TableCell>{revenue.name}</TableCell>
-                            <TableCell>{'$ ' + revenue.amount}</TableCell>
+                            <TableCell>
+                                <TextField
+                                    type="number"
+                                    value={revenue.amount}
+                                    onChange={(e) => handleAmountChange(revenue, e.target.value)}
+                                />
+                            </TableCell>
                             <TableCell>{revenue.date ? formatDate(revenue.date) : ''}</TableCell>
                             <TableCell>
                                 <Checkbox
@@ -53,4 +63,4 @@ const RevenueTable = ({ revenueData, onRevenueIncludeChange }) => {
     );
 };
 
-export default RevenueTable;
+export default RevenueQuadrant;

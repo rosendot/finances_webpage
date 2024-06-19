@@ -2,8 +2,8 @@ import './App.css';
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-import RevenueTable from './components/RevenueTable';
-import ExpensesTable from './components/ExpensesTable';
+import RevenueQuadrant from './components/RevenueQuadrant';
+import ExpensesQuadrant from './components/ExpensesQuadrant';
 
 import { Typography, Grid, Paper } from '@mui/material';
 
@@ -48,29 +48,38 @@ function App() {
     setExpensesData(updatedExpensesData);
   };
 
+  const handleRevenueAmountChange = (revenue, amount) => {
+    const updatedRevenueData = revenueData.map((item) =>
+      item.name === revenue.name ? { ...item, amount: amount } : item
+    );
+    setRevenueData(updatedRevenueData);
+  };
+
+  const handleExpenseAmountChange = (expense, amount) => {
+    const updatedExpensesData = expensesData.map((item) =>
+      item.name === expense.name ? { ...item, amount: amount } : item
+    );
+    setExpensesData(updatedExpensesData);
+  };
 
   return (
     <div className="App">
       <Grid container spacing={2} style={{ height: '100vh' }}>
         <Grid item xs={6} style={{ height: '50%' }}>
           <Paper elevation={3} style={{ height: '100%', overflowY: 'auto' }}>
-            <Typography variant="h6" component="h2" gutterBottom>
-              Revenue Table
-            </Typography>
-            <RevenueTable
+            <RevenueQuadrant
               revenueData={revenueData}
               onRevenueIncludeChange={handleRevenueIncludeChange}
+              onRevenueAmountChange={handleRevenueAmountChange}
             />
           </Paper>
         </Grid>
         <Grid item xs={6} style={{ height: '50%' }}>
           <Paper elevation={3} style={{ height: '100%', overflowY: 'auto' }}>
-            <Typography variant="h6" component="h2" gutterBottom>
-              Expenses Table
-            </Typography>
-            <ExpensesTable
+            <ExpensesQuadrant
               expensesData={expensesData}
               onExpenseIncludeChange={handleExpenseIncludeChange}
+              onExpenseAmountChange={handleExpenseAmountChange}
             />
           </Paper>
         </Grid>
