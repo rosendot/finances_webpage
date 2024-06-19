@@ -1,7 +1,11 @@
-import logo from './logo.svg';
 import './App.css';
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+
+import RevenueTable from './components/RevenueTable';
+import ExpensesTable from './components/ExpensesTable';
+
+import { Typography } from '@mui/material';
 
 function App() {
   const [revenueData, setRevenueData] = useState([]);
@@ -30,24 +34,17 @@ function App() {
     }
   };
 
-  console.log('Revenue Data:', revenueData);
-  console.log('Expenses Data:', expensesData);
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Typography variant="h4" component="h2" gutterBottom>
+        Revenue Table
+      </Typography>
+      <RevenueTable revenueData={revenueData} />
+
+      <Typography variant="h4" component="h2" gutterBottom>
+        Expenses Table
+      </Typography>
+      <ExpensesTable expensesData={expensesData} />
     </div>
   );
 }
