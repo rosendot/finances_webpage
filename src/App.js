@@ -5,7 +5,13 @@ import axios from 'axios';
 import RevenueQuadrant from './components/RevenueQuadrant';
 import ExpensesQuadrant from './components/ExpensesQuadrant';
 
-import { Typography, Grid, Paper } from '@mui/material';
+import { Grid, Paper, ThemeProvider, createTheme } from '@mui/material';
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  },
+});
 
 function App() {
   const [revenueData, setRevenueData] = useState([]);
@@ -63,44 +69,40 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <Grid container spacing={2} style={{ height: '100vh' }}>
-        <Grid item xs={6} style={{ height: '50%' }}>
-          <Paper elevation={3} style={{ height: '100%', overflowY: 'auto' }}>
-            <RevenueQuadrant
-              revenueData={revenueData}
-              onRevenueIncludeChange={handleRevenueIncludeChange}
-              onRevenueAmountChange={handleRevenueAmountChange}
-            />
-          </Paper>
+    <ThemeProvider theme={darkTheme}>
+      <div className="App">
+        <Grid container spacing={2} style={{ height: '100vh' }}>
+          <Grid item xs={6} style={{ height: '50%' }}>
+            <Paper elevation={3} style={{ height: '100%' }}>
+              <RevenueQuadrant
+                revenueData={revenueData}
+                onRevenueIncludeChange={handleRevenueIncludeChange}
+                onRevenueAmountChange={handleRevenueAmountChange}
+              />
+            </Paper>
+          </Grid>
+          <Grid item xs={6} style={{ height: '50%' }}>
+            <Paper elevation={3} style={{ height: '100%' }}>
+              <ExpensesQuadrant
+                expensesData={expensesData}
+                onExpenseIncludeChange={handleExpenseIncludeChange}
+                onExpenseAmountChange={handleExpenseAmountChange}
+              />
+            </Paper>
+          </Grid>
+          <Grid item xs={6} style={{ height: '50%' }}>
+            <Paper elevation={3} style={{ height: '100%' }}>
+              {/* Add content for the bottom left quadrant */}
+            </Paper>
+          </Grid>
+          <Grid item xs={6} style={{ height: '50%' }}>
+            <Paper elevation={3} style={{ height: '100%' }}>
+              {/* Add content for the bottom right quadrant */}
+            </Paper>
+          </Grid>
         </Grid>
-        <Grid item xs={6} style={{ height: '50%' }}>
-          <Paper elevation={3} style={{ height: '100%', overflowY: 'auto' }}>
-            <ExpensesQuadrant
-              expensesData={expensesData}
-              onExpenseIncludeChange={handleExpenseIncludeChange}
-              onExpenseAmountChange={handleExpenseAmountChange}
-            />
-          </Paper>
-        </Grid>
-        <Grid item xs={6} style={{ height: '50%' }}>
-          <Paper elevation={3} style={{ height: '100%', overflowY: 'auto' }}>
-            <Typography variant="h6" component="h2" gutterBottom>
-              Bottom Left Quadrant
-            </Typography>
-            {/* Add content for the bottom left quadrant */}
-          </Paper>
-        </Grid>
-        <Grid item xs={6} style={{ height: '50%' }}>
-          <Paper elevation={3} style={{ height: '100%', overflowY: 'auto' }}>
-            <Typography variant="h6" component="h2" gutterBottom>
-              Bottom Right Quadrant
-            </Typography>
-            {/* Add content for the bottom right quadrant */}
-          </Paper>
-        </Grid>
-      </Grid>
-    </div>
+      </div>
+    </ThemeProvider>
   );
 }
 
