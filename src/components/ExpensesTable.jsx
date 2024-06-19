@@ -1,6 +1,8 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 
+import formatDate from '../functions/formatDate';
+
 const ExpensesTable = ({ expensesData }) => {
     return (
         <TableContainer component={Paper}>
@@ -19,7 +21,7 @@ const ExpensesTable = ({ expensesData }) => {
                         <TableRow key={index}>
                             <TableCell>{expense.name}</TableCell>
                             <TableCell>{expense.amount}</TableCell>
-                            <TableCell>{expense.date}</TableCell>
+                            <TableCell>{expense.date ? formatDate(expense.date) : ''}</TableCell>
                             <TableCell>{expense.include ? 'Yes' : 'No'}</TableCell>
                             <TableCell>{expense.expense_type}</TableCell>
                         </TableRow>

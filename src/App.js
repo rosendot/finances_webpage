@@ -5,7 +5,7 @@ import axios from 'axios';
 import RevenueTable from './components/RevenueTable';
 import ExpensesTable from './components/ExpensesTable';
 
-import { Typography } from '@mui/material';
+import { Typography, Grid, Paper } from '@mui/material';
 
 function App() {
   const [revenueData, setRevenueData] = useState([]);
@@ -36,15 +36,40 @@ function App() {
 
   return (
     <div className="App">
-      <Typography variant="h4" component="h2" gutterBottom>
-        Revenue Table
-      </Typography>
-      <RevenueTable revenueData={revenueData} />
-
-      <Typography variant="h4" component="h2" gutterBottom>
-        Expenses Table
-      </Typography>
-      <ExpensesTable expensesData={expensesData} />
+      <Grid container spacing={2} style={{ height: '100vh' }}>
+        <Grid item xs={6} style={{ height: '50%' }}>
+          <Paper elevation={3} style={{ height: '100%', overflowY: 'auto' }}>
+            <Typography variant="h6" component="h2" gutterBottom>
+              Revenue Table
+            </Typography>
+            <RevenueTable revenueData={revenueData} />
+          </Paper>
+        </Grid>
+        <Grid item xs={6} style={{ height: '50%' }}>
+          <Paper elevation={3} style={{ height: '100%', overflowY: 'auto' }}>
+            <Typography variant="h6" component="h2" gutterBottom>
+              Expenses Table
+            </Typography>
+            <ExpensesTable expensesData={expensesData} />
+          </Paper>
+        </Grid>
+        <Grid item xs={6} style={{ height: '50%' }}>
+          <Paper elevation={3} style={{ height: '100%', overflowY: 'auto' }}>
+            <Typography variant="h6" component="h2" gutterBottom>
+              Bottom Left Quadrant
+            </Typography>
+            {/* Add content for the bottom left quadrant */}
+          </Paper>
+        </Grid>
+        <Grid item xs={6} style={{ height: '50%' }}>
+          <Paper elevation={3} style={{ height: '100%', overflowY: 'auto' }}>
+            <Typography variant="h6" component="h2" gutterBottom>
+              Bottom Right Quadrant
+            </Typography>
+            {/* Add content for the bottom right quadrant */}
+          </Paper>
+        </Grid>
+      </Grid>
     </div>
   );
 }
