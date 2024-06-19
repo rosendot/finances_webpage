@@ -31,7 +31,6 @@ const ExpensesTable = ({ expensesData, onExpenseIncludeChange }) => {
                         <TableCell>Amount</TableCell>
                         <TableCell>Date</TableCell>
                         <TableCell>Include</TableCell>
-                        <TableCell>Expense Type</TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -46,7 +45,6 @@ const ExpensesTable = ({ expensesData, onExpenseIncludeChange }) => {
                                     onChange={() => handleIncludeChange(expense)}
                                 />
                             </TableCell>
-                            <TableCell>{expense.expense_type}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
