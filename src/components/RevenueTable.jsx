@@ -37,7 +37,7 @@ const RevenueTable = ({ revenueData, onRevenueIncludeChange }) => {
                     {sortedRevenueData.map((revenue) => (
                         <TableRow key={revenue.name}>
                             <TableCell>{revenue.name}</TableCell>
-                            <TableCell>{revenue.amount}</TableCell>
+                            <TableCell>{'$ ' + revenue.amount}</TableCell>
                             <TableCell>{revenue.date ? formatDate(revenue.date) : ''}</TableCell>
                             <TableCell>
                                 <Checkbox

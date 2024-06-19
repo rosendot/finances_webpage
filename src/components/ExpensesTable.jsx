@@ -37,7 +37,7 @@ const ExpensesTable = ({ expensesData, onExpenseIncludeChange }) => {
                     {sortedExpensesData.map((expense) => (
                         <TableRow key={expense.name}>
                             <TableCell>{expense.name}</TableCell>
-                            <TableCell>{expense.amount}</TableCell>
+                            <TableCell>{'$ ' + expense.amount}</TableCell>
                             <TableCell>{expense.date ? formatDate(expense.date) : ''}</TableCell>
                             <TableCell>
                                 <Checkbox
