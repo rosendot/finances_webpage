@@ -37,6 +37,9 @@ const RevenueQuadrant = ({ revenueData, onRevenueIncludeChange, onRevenueAmountC
 
     return (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Typography variant="subtitle1" component="h3" gutterBottom>
+                Revenue
+            </Typography>
             <TableContainer component={Paper} style={{ flexGrow: 1, overflowY: 'auto' }}>
                 <Table stickyHeader>
                     <TableHead>
