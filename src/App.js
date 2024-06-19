@@ -34,6 +34,21 @@ function App() {
     }
   };
 
+  const handleRevenueIncludeChange = (revenue) => {
+    const updatedRevenueData = revenueData.map((item) =>
+      item.name === revenue.name ? { ...item, include: !item.include } : item
+    );
+    setRevenueData(updatedRevenueData);
+  };
+
+  const handleExpenseIncludeChange = (expense) => {
+    const updatedExpensesData = expensesData.map((item) =>
+      item.name === expense.name ? { ...item, include: !item.include } : item
+    );
+    setExpensesData(updatedExpensesData);
+  };
+
+
   return (
     <div className="App">
       <Grid container spacing={2} style={{ height: '100vh' }}>
@@ -42,7 +57,10 @@ function App() {
             <Typography variant="h6" component="h2" gutterBottom>
               Revenue Table
             </Typography>
-            <RevenueTable revenueData={revenueData} />
+            <RevenueTable
+              revenueData={revenueData}
+              onRevenueIncludeChange={handleRevenueIncludeChange}
+            />
           </Paper>
         </Grid>
         <Grid item xs={6} style={{ height: '50%' }}>
@@ -50,7 +68,10 @@ function App() {
             <Typography variant="h6" component="h2" gutterBottom>
               Expenses Table
             </Typography>
-            <ExpensesTable expensesData={expensesData} />
+            <ExpensesTable
+              expensesData={expensesData}
+              onExpenseIncludeChange={handleExpenseIncludeChange}
+            />
           </Paper>
         </Grid>
         <Grid item xs={6} style={{ height: '50%' }}>

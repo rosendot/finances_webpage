@@ -1,9 +1,27 @@
-import React from 'react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Checkbox } from '@mui/material';
 
 import formatDate from '../functions/formatDate';
 
-const ExpensesTable = ({ expensesData }) => {
+const ExpensesTable = ({ expensesData, onExpenseIncludeChange }) => {
+    const [sortedExpensesData, setSortedExpensesData] = useState([]);
+
+    useEffect(() => {
+        const sorted = [...expensesData].sort((a, b) => {
+            if (!a.date && !b.date) return 0;
+            if (!a.date) return 1;
+            if (!b.date) return -1;
+            const dateA = new Date(a.date);
+            const dateB = new Date(b.date);
+            return dateA - dateB;
+        });
+        setSortedExpensesData(sorted);
+    }, [expensesData]);
+
+    const handleIncludeChange = (index) => {
+        onExpenseIncludeChange(index);
+    };
+
     return (
         <TableContainer component={Paper}>
             <Table>
@@ -17,12 +35,17 @@ const ExpensesTable = ({ expensesData }) => {
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {expensesData.map((expense, index) => (
-                        <TableRow key={index}>
+                    {sortedExpensesData.map((expense) => (
+                        <TableRow key={expense.name}>
                             <TableCell>{expense.name}</TableCell>
                             <TableCell>{expense.amount}</TableCell>
                             <TableCell>{expense.date ? formatDate(expense.date) : ''}</TableCell>
-                            <TableCell>{expense.include ? 'Yes' : 'No'}</TableCell>
+                            <TableCell>
+                                <Checkbox
+                                    checked={expense.include}
+                                    onChange={() => handleIncludeChange(expense)}
+                                />
+                            </TableCell>
                             <TableCell>{expense.expense_type}</TableCell>
                         </TableRow>
                     ))}
