@@ -63,6 +63,20 @@ function Dashboard() {
         setExpensesData(updatedExpensesData);
     };
 
+    const handleRevenueDateChange = (revenue, date) => {
+        const updatedRevenueData = revenueData.map((item) =>
+            item.name === revenue.name ? { ...item, date: date } : item
+        );
+        setRevenueData(updatedRevenueData);
+    };
+
+    const handleExpenseDateChange = (expense, date) => {
+        const updatedExpensesData = expensesData.map((item) =>
+            item.name === expense.name ? { ...item, date: date } : item
+        );
+        setExpensesData(updatedExpensesData);
+    };
+
     const handleSave = async () => {
         try {
             await axios.post('http://localhost:5000/api/save', {
@@ -90,6 +104,7 @@ function Dashboard() {
                             revenueData={revenueData}
                             onRevenueIncludeChange={handleRevenueIncludeChange}
                             onRevenueAmountChange={handleRevenueAmountChange}
+                            onRevenueDateChange={handleRevenueDateChange}
                         />
                     </Paper>
                 </Grid>
@@ -99,6 +114,7 @@ function Dashboard() {
                             expensesData={expensesData}
                             onExpenseIncludeChange={handleExpenseIncludeChange}
                             onExpenseAmountChange={handleExpenseAmountChange}
+                            onExpenseDateChange={handleExpenseDateChange}
                             setExpensesData={setExpensesData}
                         />
                     </Paper>

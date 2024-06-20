@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 
 import formatDate from '../functions/formatDate';
 
-const ExpensesQuadrant = ({ expensesData, onExpenseIncludeChange, onExpenseAmountChange, setExpensesData }) => {
+const ExpensesQuadrant = ({ expensesData, onExpenseIncludeChange, onExpenseAmountChange, onExpenseDateChange, setExpensesData }) => {
     const [manualExpenses, setManualExpenses] = useState([]);
     const [recurringExpenses, setRecurringExpenses] = useState([]);
 
@@ -61,45 +61,58 @@ const ExpensesQuadrant = ({ expensesData, onExpenseIncludeChange, onExpenseAmoun
         onExpenseAmountChange(expense, amount);
     };
 
+    const handleDateChange = (expense, date) => {
+        onExpenseDateChange(expense, date);
+    };
+
+    const renderExpenseTable = (expenses) => (
+        <TableContainer component={Paper} style={{ flexGrow: 1, overflowY: 'auto' }}>
+            <Table stickyHeader>
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Name</TableCell>
+                        <TableCell>Amount</TableCell>
+                        <TableCell>Date</TableCell>
+                        <TableCell>Include</TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {expenses.map((expense) => (
+                        <TableRow key={expense.name}>
+                            <TableCell>{expense.name}</TableCell>
+                            <TableCell>
+                                <TextField
+                                    type="number"
+                                    value={expense.amount}
+                                    onChange={(e) => handleAmountChange(expense, e.target.value)}
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <TextField
+                                    value={formatDate(expense.date) || ''}
+                                    onChange={(e) => handleDateChange(expense, e.target.value)}
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <Checkbox
+                                    checked={expense.include}
+                                    onChange={() => handleIncludeChange(expense)}
+                                />
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </TableContainer>
+    );
+
     return (
         <div style={{ height: '100%', display: 'flex' }}>
             <div style={{ width: '50%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="subtitle1" component="h3" gutterBottom>
                     Manual
                 </Typography>
-                <TableContainer component={Paper} style={{ flexGrow: 1, overflowY: 'auto' }}>
-                    <Table stickyHeader>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Name</TableCell>
-                                <TableCell>Amount</TableCell>
-                                <TableCell>Date</TableCell>
-                                <TableCell>Include</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {manualExpenses.map((expense) => (
-                                <TableRow key={expense.name}>
-                                    <TableCell>{expense.name}</TableCell>
-                                    <TableCell>
-                                        <TextField
-                                            type="number"
-                                            value={expense.amount}
-                                            onChange={(e) => handleAmountChange(expense, e.target.value)}
-                                        />
-                                    </TableCell>
-                                    <TableCell>{expense.date ? formatDate(expense.date) : ''}</TableCell>
-                                    <TableCell>
-                                        <Checkbox
-                                            checked={expense.include}
-                                            onChange={() => handleIncludeChange(expense)}
-                                        />
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                {renderExpenseTable(manualExpenses)}
                 <Box mt={2}>
                     <Typography variant="subtitle1" component="h4" gutterBottom>
                         Total
@@ -116,39 +129,7 @@ const ExpensesQuadrant = ({ expensesData, onExpenseIncludeChange, onExpenseAmoun
                         Update Dates
                     </Button>
                 </Box>
-                <TableContainer component={Paper} style={{ flexGrow: 1, overflowY: 'auto' }}>
-                    <Table stickyHeader>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Name</TableCell>
-                                <TableCell>Amount</TableCell>
-                                <TableCell>Date</TableCell>
-                                <TableCell>Include</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {recurringExpenses.map((expense) => (
-                                <TableRow key={expense.name}>
-                                    <TableCell>{expense.name}</TableCell>
-                                    <TableCell>
-                                        <TextField
-                                            type="number"
-                                            value={expense.amount}
-                                            onChange={(e) => handleAmountChange(expense, e.target.value)}
-                                        />
-                                    </TableCell>
-                                    <TableCell>{expense.date ? formatDate(expense.date) : ''}</TableCell>
-                                    <TableCell>
-                                        <Checkbox
-                                            checked={expense.include}
-                                            onChange={() => handleIncludeChange(expense)}
-                                        />
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                {renderExpenseTable(recurringExpenses)}
                 <Box mt={2}>
                     <Typography variant="subtitle1" component="h4" gutterBottom>
                         Total
@@ -160,4 +141,4 @@ const ExpensesQuadrant = ({ expensesData, onExpenseIncludeChange, onExpenseAmoun
     );
 };
 
-export default ExpensesQuadrant; 
+export default ExpensesQuadrant;

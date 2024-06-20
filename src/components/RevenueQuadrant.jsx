@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 
 import formatDate from '../functions/formatDate';
 
-const RevenueQuadrant = ({ revenueData, onRevenueIncludeChange, onRevenueAmountChange }) => {
+const RevenueQuadrant = ({ revenueData, onRevenueIncludeChange, onRevenueAmountChange, onRevenueDateChange }) => {
     const [sortedRevenueData, setSortedRevenueData] = useState([]);
 
     useEffect(() => {
@@ -35,6 +35,10 @@ const RevenueQuadrant = ({ revenueData, onRevenueIncludeChange, onRevenueAmountC
         onRevenueAmountChange(revenue, amount);
     };
 
+    const handleDateChange = (revenue, date) => {
+        onRevenueDateChange(revenue, date);
+    };
+
     return (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Typography variant="subtitle1" component="h3" gutterBottom>
@@ -61,7 +65,12 @@ const RevenueQuadrant = ({ revenueData, onRevenueIncludeChange, onRevenueAmountC
                                         onChange={(e) => handleAmountChange(revenue, e.target.value)}
                                     />
                                 </TableCell>
-                                <TableCell>{revenue.date ? formatDate(revenue.date) : ''}</TableCell>
+                                <TableCell>
+                                    <TextField
+                                        value={formatDate(revenue.date) || ''}
+                                        onChange={(e) => handleDateChange(revenue, e.target.value)}
+                                    />
+                                </TableCell>
                                 <TableCell>
                                     <Checkbox
                                         checked={revenue.include}
