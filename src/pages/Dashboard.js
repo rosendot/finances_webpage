@@ -1,9 +1,10 @@
 // src/pages/Dashboard.js
 import React, { useEffect, useState } from 'react';
-import { Grid, Paper } from '@mui/material';
+import { Grid, Paper, Button, Box } from '@mui/material';
 import RevenueQuadrant from '../components/RevenueQuadrant';
 import ExpensesQuadrant from '../components/ExpensesQuadrant';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 function Dashboard() {
     const [revenueData, setRevenueData] = useState([]);
@@ -20,6 +21,7 @@ function Dashboard() {
             setRevenueData(response.data);
         } catch (error) {
             console.error('Error fetching revenue data:', error);
+            toast.error('Failed to fetch revenue data');
         }
     };
 
@@ -29,6 +31,7 @@ function Dashboard() {
             setExpensesData(response.data);
         } catch (error) {
             console.error('Error fetching expenses data:', error);
+            toast.error('Failed to fetch expenses data');
         }
     };
 
@@ -60,38 +63,59 @@ function Dashboard() {
         setExpensesData(updatedExpensesData);
     };
 
+    const handleSave = async () => {
+        try {
+            await axios.post('http://localhost:5000/api/save', {
+                revenue: revenueData,
+                expenses: expensesData
+            });
+            toast.success('Data saved successfully!');
+        } catch (error) {
+            console.error('Error saving data:', error);
+            toast.error('Error saving data. Please try again.');
+        }
+    };
+
     return (
-        <Grid container spacing={2} style={{ height: 'calc(100vh - 64px)' }}>
-            <Grid item xs={6} style={{ height: '50%' }}>
-                <Paper elevation={3} style={{ height: '100%' }}>
-                    <RevenueQuadrant
-                        revenueData={revenueData}
-                        onRevenueIncludeChange={handleRevenueIncludeChange}
-                        onRevenueAmountChange={handleRevenueAmountChange}
-                    />
-                </Paper>
+        <Box>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                <Button variant="contained" color="primary" onClick={handleSave}>
+                    Save Data
+                </Button>
+            </Box>
+            <Grid container spacing={2} style={{ height: 'calc(100vh - 120px)' }}>
+                <Grid item xs={6} style={{ height: '50%' }}>
+                    <Paper elevation={3} style={{ height: '100%' }}>
+                        <RevenueQuadrant
+                            revenueData={revenueData}
+                            onRevenueIncludeChange={handleRevenueIncludeChange}
+                            onRevenueAmountChange={handleRevenueAmountChange}
+                        />
+                    </Paper>
+                </Grid>
+                <Grid item xs={6} style={{ height: '50%' }}>
+                    <Paper elevation={3} style={{ height: '100%' }}>
+                        <ExpensesQuadrant
+                            expensesData={expensesData}
+                            onExpenseIncludeChange={handleExpenseIncludeChange}
+                            onExpenseAmountChange={handleExpenseAmountChange}
+                            setExpensesData={setExpensesData}
+                        />
+                    </Paper>
+                </Grid>
+                <Grid item xs={6} style={{ height: '50%' }}>
+                    <Paper elevation={3} style={{ height: '100%' }}>
+                        {/* Add content for the bottom left quadrant */}
+                    </Paper>
+                </Grid>
+                <Grid item xs={6} style={{ height: '50%' }}>
+                    <Paper elevation={3} style={{ height: '100%' }}>
+                        {/* Add content for the bottom right quadrant */}
+                    </Paper>
+                </Grid>
             </Grid>
-            <Grid item xs={6} style={{ height: '50%' }}>
-                <Paper elevation={3} style={{ height: '100%' }}>
-                    <ExpensesQuadrant
-                        expensesData={expensesData}
-                        onExpenseIncludeChange={handleExpenseIncludeChange}
-                        onExpenseAmountChange={handleExpenseAmountChange}
-                    />
-                </Paper>
-            </Grid>
-            <Grid item xs={6} style={{ height: '50%' }}>
-                <Paper elevation={3} style={{ height: '100%' }}>
-                    {/* Add content for the bottom left quadrant */}
-                </Paper>
-            </Grid>
-            <Grid item xs={6} style={{ height: '50%' }}>
-                <Paper elevation={3} style={{ height: '100%' }}>
-                    {/* Add content for the bottom right quadrant */}
-                </Paper>
-            </Grid>
-        </Grid>
+        </Box>
     );
 }
 
-export default Dashboard; 
+export default Dashboard;

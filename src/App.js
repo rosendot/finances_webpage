@@ -7,6 +7,8 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const darkTheme = createTheme({
   palette: {
@@ -27,6 +29,7 @@ function App() {
 
   return (
     <ThemeProvider theme={darkTheme}>
+      <ToastContainer />
       <Router>
         <Box sx={{ display: 'flex' }}>
           <AppBar position="fixed">
