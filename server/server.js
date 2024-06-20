@@ -28,6 +28,37 @@ app.get('/api/expenses', async (req, res) => {
     }
 });
 
+app.post('/api/save', async (req, res) => {
+    const { revenue, expenses } = req.body;
+
+    try {
+        await pool.query('BEGIN');
+
+        // Update revenue data
+        for (const item of revenue) {
+            await pool.query(
+                'UPDATE revenue SET amount = $1, include = $2, date = $3 WHERE name = $4',
+                [item.amount, item.include, item.date, item.name]
+            );
+        }
+
+        // Update expenses data
+        for (const item of expenses) {
+            await pool.query(
+                'UPDATE expenses SET amount = $1, include = $2, date = $3 WHERE name = $4',
+                [item.amount, item.include, item.date, item.name]
+            );
+        }
+
+        await pool.query('COMMIT');
+        res.json({ message: 'Data saved successfully' });
+    } catch (error) {
+        await pool.query('ROLLBACK');
+        console.error('Error saving data:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Start the server
 const port = process.env.PORT || 5000;
 app.listen(port, () => {

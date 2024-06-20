@@ -4,8 +4,9 @@ import axios from 'axios';
 
 import RevenueQuadrant from './components/RevenueQuadrant';
 import ExpensesQuadrant from './components/ExpensesQuadrant';
+import SaveButton from './components/SaveButton';
 
-import { Grid, Paper, ThemeProvider, createTheme } from '@mui/material';
+import { Grid, Paper, ThemeProvider, createTheme, Box } from '@mui/material';
 
 const darkTheme = createTheme({
   palette: {
@@ -75,7 +76,10 @@ function App() {
   return (
     <ThemeProvider theme={darkTheme}>
       <div className="App">
-        <Grid container spacing={2} style={{ height: '100vh' }}>
+        <Box p={2}>
+          <SaveButton revenueData={revenueData} expensesData={expensesData} />
+        </Box>
+        <Grid container spacing={2} style={{ height: 'calc(100vh - 64px)' }}>
           <Grid item xs={6} style={{ height: '50%' }}>
             <Paper elevation={3} style={{ height: '100%' }}>
               <RevenueQuadrant
