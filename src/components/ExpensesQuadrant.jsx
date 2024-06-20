@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Checkbox, TextField, Typography, Box, Button } from '@mui/material';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 import formatDate from '../functions/formatDate';
 
@@ -26,6 +27,23 @@ const ExpensesQuadrant = ({ expensesData, onExpenseIncludeChange, onExpenseAmoun
         setRecurringExpenses(recurring);
     }, [expensesData]);
 
+    const updateDates = async () => {
+        try {
+            const response = await axios.post('http://localhost:5000/api/update-recurring-dates', { expenses: recurringExpenses });
+            setExpensesData(prevData => {
+                const updatedData = prevData.map(expense => {
+                    const updatedExpense = response.data.find(item => item.name === expense.name);
+                    return updatedExpense || expense;
+                });
+                return updatedData;
+            });
+            toast.success('Recurring dates updated successfully');
+        } catch (error) {
+            console.error('Error updating dates:', error);
+            toast.error('Failed to update recurring dates');
+        }
+    };
+
     const calculateTotal = (expenses) => {
         return expenses.reduce((total, expense) => {
             if (expense.include) {
@@ -41,21 +59,6 @@ const ExpensesQuadrant = ({ expensesData, onExpenseIncludeChange, onExpenseAmoun
 
     const handleAmountChange = (expense, amount) => {
         onExpenseAmountChange(expense, amount);
-    };
-
-    const updateDates = async () => {
-        try {
-            const response = await axios.post('http://localhost:5000/api/update-recurring-dates', { expenses: recurringExpenses });
-            setExpensesData(prevData => {
-                const updatedData = prevData.map(expense => {
-                    const updatedExpense = response.data.find(item => item.name === expense.name);
-                    return updatedExpense || expense;
-                });
-                return updatedData;
-            });
-        } catch (error) {
-            console.error('Error updating dates:', error);
-        }
     };
 
     return (

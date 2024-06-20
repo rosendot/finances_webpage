@@ -53,9 +53,8 @@ app.post('/api/save', async (req, res) => {
         await pool.query('COMMIT');
         res.json({ message: 'Data saved successfully' });
     } catch (error) {
-        await pool.query('ROLLBACK');
         console.error('Error saving data:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Failed to save data' });
     }
 });
 
@@ -98,9 +97,8 @@ app.post('/api/update-recurring-dates', async (req, res) => {
 
         res.json(updatedExpenses);
     } catch (error) {
-        await pool.query('ROLLBACK');
         console.error('Error updating recurring dates:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Failed to update recurring dates' });
     }
 });
 

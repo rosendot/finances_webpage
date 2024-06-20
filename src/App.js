@@ -4,9 +4,10 @@ import axios from 'axios';
 
 import RevenueQuadrant from './components/RevenueQuadrant';
 import ExpensesQuadrant from './components/ExpensesQuadrant';
-import SaveButton from './components/SaveButton';
+import { ToastContainer, toast } from 'react-toastify';
+import "react-toastify/dist/ReactToastify.css";
 
-import { Grid, Paper, ThemeProvider, createTheme, Box } from '@mui/material';
+import { Grid, Paper, ThemeProvider, createTheme, Box, Button } from '@mui/material';
 
 const darkTheme = createTheme({
   palette: {
@@ -33,6 +34,7 @@ function App() {
       setRevenueData(response.data);
     } catch (error) {
       console.error('Error fetching revenue data:', error);
+      toast.error('Failed to fetch revenue data');
     }
   };
 
@@ -42,6 +44,20 @@ function App() {
       setExpensesData(response.data);
     } catch (error) {
       console.error('Error fetching expenses data:', error);
+      toast.error('Failed to fetch expenses data');
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      await axios.post('http://localhost:5000/api/save', {
+        revenue: revenueData,
+        expenses: expensesData
+      });
+      toast.success('Data saved successfully!');
+    } catch (error) {
+      console.error('Error saving data:', error);
+      toast.error('Error saving data. Please try again.');
     }
   };
 
@@ -76,8 +92,11 @@ function App() {
   return (
     <ThemeProvider theme={darkTheme}>
       <div className="App">
-        <Box p={2}>
-          <SaveButton revenueData={revenueData} expensesData={expensesData} />
+        <ToastContainer />
+        <Box p={2} display="flex" justifyContent="flex-end">
+          <Button variant="contained" color="primary" onClick={handleSave}>
+            Save Data
+          </Button>
         </Box>
         <Grid container spacing={2} style={{ height: 'calc(100vh - 64px)' }}>
           <Grid item xs={6} style={{ height: '50%' }}>
