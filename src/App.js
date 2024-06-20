@@ -95,6 +95,7 @@ function App() {
                 expensesData={expensesData}
                 onExpenseIncludeChange={handleExpenseIncludeChange}
                 onExpenseAmountChange={handleExpenseAmountChange}
+                setExpensesData={setExpensesData}
               />
             </Paper>
           </Grid>

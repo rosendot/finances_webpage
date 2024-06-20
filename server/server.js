@@ -59,6 +59,51 @@ app.post('/api/save', async (req, res) => {
     }
 });
 
+app.post('/api/update-recurring-dates', async (req, res) => {
+    const { expenses } = req.body;
+
+    try {
+        const updatedExpenses = expenses.map(expense => {
+            if (expense.frequency === 'monthly' || expense.frequency === 'yearly') {
+                const currentDate = new Date();
+                const expenseDate = new Date(expense.date);
+
+                if (expenseDate < currentDate) {
+                    if (expense.frequency === 'monthly') {
+                        while (expenseDate <= currentDate) {
+                            expenseDate.setMonth(expenseDate.getMonth() + 1);
+                        }
+                    } else if (expense.frequency === 'yearly') {
+                        while (expenseDate <= currentDate) {
+                            expenseDate.setFullYear(expenseDate.getFullYear() + 1);
+                        }
+                    }
+                    return { ...expense, date: expenseDate.toISOString().split('T')[0] };
+                }
+            }
+            return expense;
+        });
+
+        // Update the database with new dates
+        await pool.query('BEGIN');
+        for (const expense of updatedExpenses) {
+            if (expense.date !== expenses.find(e => e.name === expense.name).date) {
+                await pool.query(
+                    'UPDATE expenses SET date = $1 WHERE name = $2',
+                    [expense.date, expense.name]
+                );
+            }
+        }
+        await pool.query('COMMIT');
+
+        res.json(updatedExpenses);
+    } catch (error) {
+        await pool.query('ROLLBACK');
+        console.error('Error updating recurring dates:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Start the server
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
