@@ -4,6 +4,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 
 import formatDate from '../functions/formatDate';
+import isWithinWeek from '../functions/isWithinWeek';
 
 const ExpensesQuadrant = ({ expensesData, onExpenseIncludeChange, onExpenseAmountChange, onExpenseDateChange, setExpensesData }) => {
     const [manualExpenses, setManualExpenses] = useState([]);
@@ -21,8 +22,16 @@ const ExpensesQuadrant = ({ expensesData, onExpenseIncludeChange, onExpenseAmoun
             });
         };
 
-        const manual = sortExpenses(expensesData.filter((expense) => expense.expense_type === 'manual'));
-        const recurring = sortExpenses(expensesData.filter((expense) => expense.expense_type === 'recurring'));
+        const updateExpenses = (expenses) => {
+            return expenses.map(expense => ({
+                ...expense,
+                include: expense.date ? isWithinWeek(expense.date) : expense.include
+            }));
+        };
+
+        const manual = updateExpenses(sortExpenses(expensesData.filter((expense) => expense.expense_type === 'manual')));
+        const recurring = updateExpenses(sortExpenses(expensesData.filter((expense) => expense.expense_type === 'recurring')));
+
         setManualExpenses(manual);
         setRecurringExpenses(recurring);
     }, [expensesData]);
@@ -54,7 +63,9 @@ const ExpensesQuadrant = ({ expensesData, onExpenseIncludeChange, onExpenseAmoun
     };
 
     const handleIncludeChange = (expense) => {
-        onExpenseIncludeChange(expense);
+        if (!isWithinWeek(expense.date)) {
+            onExpenseIncludeChange(expense);
+        }
     };
 
     const handleAmountChange = (expense, amount) => {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Checkbox, TextField, Typography, Box } from '@mui/material';
 
 import formatDate from '../functions/formatDate';
+import isWithinWeek from '../functions/isWithinWeek';
 
 const RevenueQuadrant = ({ revenueData, onRevenueIncludeChange, onRevenueAmountChange, onRevenueDateChange }) => {
     const [sortedRevenueData, setSortedRevenueData] = useState([]);
@@ -15,7 +16,13 @@ const RevenueQuadrant = ({ revenueData, onRevenueIncludeChange, onRevenueAmountC
             const dateB = new Date(b.date);
             return dateA - dateB;
         });
-        setSortedRevenueData(sorted);
+
+        const updatedData = sorted.map(revenue => ({
+            ...revenue,
+            include: revenue.date ? isWithinWeek(revenue.date) : revenue.include
+        }));
+
+        setSortedRevenueData(updatedData);
     }, [revenueData]);
 
     const calculateTotal = () => {
@@ -28,7 +35,9 @@ const RevenueQuadrant = ({ revenueData, onRevenueIncludeChange, onRevenueAmountC
     };
 
     const handleIncludeChange = (revenue) => {
-        onRevenueIncludeChange(revenue);
+        if (!isWithinWeek(revenue.date)) {
+            onRevenueIncludeChange(revenue);
+        }
     };
 
     const handleAmountChange = (revenue, amount) => {
