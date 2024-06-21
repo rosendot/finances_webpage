@@ -44,7 +44,7 @@ function App() {
                 <MenuIcon />
               </IconButton>
               <Typography variant="h6" noWrap component="div">
-                Your App Name
+                Rosie's Financial Planner
               </Typography>
             </Toolbar>
           </AppBar>
