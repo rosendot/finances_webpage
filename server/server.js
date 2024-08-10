@@ -28,43 +28,31 @@ app.get('/api/expenses', async (req, res) => {
     }
 });
 
-app.post('/api/save', async (req, res) => {
-    const { revenue, expenses } = req.body;
+app.post('/api/save-monthly-data', async (req, res) => {
+    const {
+        year,
+        month,
+        budget_income,
+        actual_income,
+        budget_expenses,
+        actual_expenses,
+        profit,
+        savings_rate
+    } = req.body;
 
     try {
-        await pool.query('BEGIN');
-
-        // Update revenue data (assuming revenue table structure hasn't changed)
-        for (const item of revenue) {
-            await pool.query(
-                'UPDATE revenue SET amount = $1, include = $2, date = $3 WHERE name = $4',
-                [item.amount, item.include, item.date, item.name]
-            );
-        }
-
-        // Update or insert expenses data
-        for (const item of expenses) {
-            if (item.id) {
-                // Update existing expense
-                await pool.query(
-                    'UPDATE expenses SET name = $1, amount = $2, date = $3, category = $4 WHERE id = $5',
-                    [item.name, item.amount, item.date, item.category, item.id]
-                );
-            } else {
-                // Insert new expense
-                await pool.query(
-                    'INSERT INTO expenses (name, amount, date, category) VALUES ($1, $2, $3, $4)',
-                    [item.name, item.amount, item.date, item.category]
-                );
-            }
-        }
-
-        await pool.query('COMMIT');
-        res.json({ message: 'Data saved successfully' });
+        await pool.query(
+            `INSERT INTO monthly_data 
+            (year, month, budget_income, actual_income, budget_expenses, actual_expenses, profit, savings_rate)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (year, month) DO UPDATE
+            SET budget_income = $3, actual_income = $4, budget_expenses = $5, actual_expenses = $6, profit = $7, savings_rate = $8`,
+            [year, month, budget_income, actual_income, budget_expenses, actual_expenses, profit, savings_rate]
+        );
+        res.json({ message: 'Monthly data saved successfully' });
     } catch (error) {
-        await pool.query('ROLLBACK');
-        console.error('Error saving data:', error);
-        res.status(500).json({ error: 'Failed to save data' });
+        console.error('Error saving monthly data:', error);
+        res.status(500).json({ error: 'Failed to save monthly data' });
     }
 });
 
