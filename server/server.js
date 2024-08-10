@@ -56,6 +56,17 @@ app.post('/api/save-monthly-data', async (req, res) => {
     }
 });
 
+app.get('/api/monthly-data/:year', async (req, res) => {
+    const year = req.params.year;
+    try {
+        const { rows } = await pool.query('SELECT * FROM monthly_data WHERE year = $1 ORDER BY month', [year]);
+        res.json(rows);
+    } catch (error) {
+        console.error('Error fetching monthly data:', error);
+        res.status(500).json({ error: 'Failed to fetch monthly data' });
+    }
+});
+
 app.get('/api/categories', async (req, res) => {
     try {
         const { rows: categories } = await pool.query('SELECT * FROM categories');

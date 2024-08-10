@@ -7,7 +7,7 @@ import ActualExpenses from '../components/ActualExpenses';
 import ProfitSummary from '../components/ProfitSummary';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-
+import { processCSV } from '../utils/csvProcessor';
 
 function Dashboard() {
     const [revenueData, setRevenueData] = useState([]);
@@ -89,7 +89,11 @@ function Dashboard() {
                 profit: calculateProfit(),
                 savings_rate: calculateSavingsRate()
             });
-            toast.success('Monthly data saved successfully!');
+            if (response.status === 200) {
+                toast.success('Monthly data saved successfully!');
+            } else {
+                toast.error('Failed to save monthly data. Please try again.');
+            }
         } catch (error) {
             console.error('Error saving monthly data:', error);
             toast.error('Failed to save monthly data. Please try again.');
@@ -99,9 +103,68 @@ function Dashboard() {
     const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i);
     const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
+    const handleCSVImport = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const csvData = e.target.result;
+                const processedData = processCSV(csvData);
+                updateDataFromCSV(processedData);
+            };
+            reader.readAsText(file);
+        }
+    };
+
+    const updateDataFromCSV = (processedData) => {
+        const { income, expenses } = processedData;
+
+        // Update income
+        setRevenueData(prevData => {
+            const updatedData = [...prevData];
+            income.forEach(item => {
+                const existingIndex = updatedData.findIndex(rev => rev.name === item.name);
+                if (existingIndex !== -1) {
+                    updatedData[existingIndex].amount = item.amount;
+                } else {
+                    updatedData.push(item);
+                }
+            });
+            return updatedData;
+        });
+
+        // Update expenses
+        setExpensesData(prevData => {
+            const updatedData = [...prevData];
+            expenses.forEach(item => {
+                const existingIndex = updatedData.findIndex(exp => exp.name === item.name);
+                if (existingIndex !== -1) {
+                    updatedData[existingIndex].amount = item.amount;
+                } else {
+                    updatedData.push(item);
+                }
+            });
+            return updatedData;
+        });
+
+        toast.success('CSV data imported successfully!');
+    };
+    console.log(expensesData)
     return (
         <Box>
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2, gap: 2 }}>
+                <input
+                    accept=".csv"
+                    style={{ display: 'none' }}
+                    id="csv-file"
+                    type="file"
+                    onChange={handleCSVImport}
+                />
+                <label htmlFor="csv-file">
+                    <Button variant="contained" component="span">
+                        Import CSV
+                    </Button>
+                </label>
                 <FormControl style={{ width: '5%' }}>
                     <InputLabel>Year</InputLabel>
                     <Select
