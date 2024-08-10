@@ -34,7 +34,7 @@ app.post('/api/save', async (req, res) => {
     try {
         await pool.query('BEGIN');
 
-        // Update revenue data
+        // Update revenue data (assuming revenue table structure hasn't changed)
         for (const item of revenue) {
             await pool.query(
                 'UPDATE revenue SET amount = $1, include = $2, date = $3 WHERE name = $4',
@@ -42,17 +42,27 @@ app.post('/api/save', async (req, res) => {
             );
         }
 
-        // Update expenses data
+        // Update or insert expenses data
         for (const item of expenses) {
-            await pool.query(
-                'UPDATE expenses SET amount = $1, include = $2, date = $3 WHERE name = $4',
-                [item.amount, item.include, item.date, item.name]
-            );
+            if (item.id) {
+                // Update existing expense
+                await pool.query(
+                    'UPDATE expenses SET name = $1, amount = $2, date = $3, category = $4 WHERE id = $5',
+                    [item.name, item.amount, item.date, item.category, item.id]
+                );
+            } else {
+                // Insert new expense
+                await pool.query(
+                    'INSERT INTO expenses (name, amount, date, category) VALUES ($1, $2, $3, $4)',
+                    [item.name, item.amount, item.date, item.category]
+                );
+            }
         }
 
         await pool.query('COMMIT');
         res.json({ message: 'Data saved successfully' });
     } catch (error) {
+        await pool.query('ROLLBACK');
         console.error('Error saving data:', error);
         res.status(500).json({ error: 'Failed to save data' });
     }
@@ -65,51 +75,6 @@ app.get('/api/categories', async (req, res) => {
     } catch (error) {
         console.error('Error fetching categories:', error);
         res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-
-app.post('/api/update-recurring-dates', async (req, res) => {
-    const { expenses } = req.body;
-
-    try {
-        const updatedExpenses = expenses.map(expense => {
-            if (expense.frequency === 'monthly' || expense.frequency === 'yearly') {
-                const currentDate = new Date();
-                const expenseDate = new Date(expense.date);
-
-                if (expenseDate < currentDate) {
-                    if (expense.frequency === 'monthly') {
-                        while (expenseDate <= currentDate) {
-                            expenseDate.setMonth(expenseDate.getMonth() + 1);
-                        }
-                    } else if (expense.frequency === 'yearly') {
-                        while (expenseDate <= currentDate) {
-                            expenseDate.setFullYear(expenseDate.getFullYear() + 1);
-                        }
-                    }
-                    return { ...expense, date: expenseDate.toISOString().split('T')[0] };
-                }
-            }
-            return expense;
-        });
-
-        // Update the database with new dates
-        await pool.query('BEGIN');
-        for (const expense of updatedExpenses) {
-            if (expense.date !== expenses.find(e => e.name === expense.name).date) {
-                await pool.query(
-                    'UPDATE expenses SET date = $1 WHERE name = $2',
-                    [expense.date, expense.name]
-                );
-            }
-        }
-        await pool.query('COMMIT');
-
-        res.json(updatedExpenses);
-    } catch (error) {
-        console.error('Error updating recurring dates:', error);
-        res.status(500).json({ error: 'Failed to update recurring dates' });
     }
 });
 

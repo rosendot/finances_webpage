@@ -4,6 +4,7 @@ import IncomeBudget from '../components/IncomeBudget';
 import ActualIncome from '../components/ActualIncome';
 import ExpensesBudget from '../components/ExpensesBudget';
 import ActualExpenses from '../components/ActualExpenses';
+import ProfitSummary from '../components/ProfitSummary';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -48,6 +49,14 @@ function Dashboard() {
         }
     };
 
+    const calculateTotalIncome = () => {
+        return revenueData.reduce((total, income) => total + parseFloat(income.amount || 0), 0);
+    };
+
+    const calculateTotalExpenses = () => {
+        return expensesData.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
+    };
+
     const handleSave = async () => {
         try {
             await axios.post('http://localhost:5000/api/save', {
@@ -87,6 +96,10 @@ function Dashboard() {
                             categories={categories}
                         />
                     </Paper>
+                    <ProfitSummary
+                        totalIncome={calculateTotalIncome()}
+                        totalExpenses={calculateTotalExpenses()}
+                    />
                 </Grid>
                 <Grid item xs={6} style={{ height: '50%' }}>
                     <Paper elevation={3} style={{ height: '100%', overflow: 'auto' }}>
