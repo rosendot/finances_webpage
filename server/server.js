@@ -58,6 +58,17 @@ app.post('/api/save', async (req, res) => {
     }
 });
 
+app.get('/api/categories', async (req, res) => {
+    try {
+        const { rows: categories } = await pool.query('SELECT * FROM categories');
+        res.json(categories);
+    } catch (error) {
+        console.error('Error fetching categories:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
 app.post('/api/update-recurring-dates', async (req, res) => {
     const { expenses } = req.body;
 
