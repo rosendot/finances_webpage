@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Table,
     TableBody,
@@ -16,6 +16,20 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const ExpensesBudget = ({ expensesData, setExpensesData }) => {
+    const [selectedRows, setSelectedRows] = useState(new Set());
+
+    const handleRowClick = (id) => {
+        setSelectedRows(prev => {
+            const newSelected = new Set(prev);
+            if (newSelected.has(id)) {
+                newSelected.delete(id);
+            } else {
+                newSelected.add(id);
+            }
+            return newSelected;
+        });
+    };
+
     const handleExpectedAmountChange = async (id, value) => {
         try {
             await axios.put(`http://localhost:5000/api/expenses/${id}`, {
@@ -57,6 +71,11 @@ const ExpensesBudget = ({ expensesData, setExpensesData }) => {
         try {
             await axios.delete(`http://localhost:5000/api/expenses/${id}`);
             setExpensesData(expensesData.filter(expense => expense.id !== id));
+            setSelectedRows(prev => {
+                const newSelected = new Set(prev);
+                newSelected.delete(id);
+                return newSelected;
+            });
             toast.success('Deleted expense');
         } catch (error) {
             console.error('Error deleting expense:', error);
@@ -97,18 +116,36 @@ const ExpensesBudget = ({ expensesData, setExpensesData }) => {
                     </TableHead>
                     <TableBody>
                         {expensesData.map((expense) => (
-                            <TableRow key={expense.id}>
+                            <TableRow
+                                key={expense.id}
+                                onClick={() => handleRowClick(expense.id)}
+                                sx={{
+                                    cursor: 'pointer',
+                                    backgroundColor: selectedRows.has(expense.id) ? '#8a8a8a' : 'inherit',
+                                    '&:hover': {
+                                        backgroundColor: '#55c9c2',
+                                    },
+                                }}
+                            >
                                 <TableCell>
                                     <TextField
                                         value={expense.name}
-                                        onChange={(e) => updateExpenseDetails(expense.id, 'name', e.target.value)}
+                                        onChange={(e) => {
+                                            e.stopPropagation();
+                                            updateExpenseDetails(expense.id, 'name', e.target.value);
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
                                         variant="standard"
                                     />
                                 </TableCell>
                                 <TableCell>
                                     <TextField
                                         value={expense.category || ''}
-                                        onChange={(e) => updateExpenseDetails(expense.id, 'category', e.target.value)}
+                                        onChange={(e) => {
+                                            e.stopPropagation();
+                                            updateExpenseDetails(expense.id, 'category', e.target.value);
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
                                         variant="standard"
                                     />
                                 </TableCell>
@@ -116,7 +153,11 @@ const ExpensesBudget = ({ expensesData, setExpensesData }) => {
                                     <TextField
                                         type="number"
                                         value={expense.expected_amount || ''}
-                                        onChange={(e) => handleExpectedAmountChange(expense.id, e.target.value)}
+                                        onChange={(e) => {
+                                            e.stopPropagation();
+                                            handleExpectedAmountChange(expense.id, e.target.value);
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
                                         variant="standard"
                                         InputProps={{
                                             startAdornment: '$'
@@ -125,7 +166,10 @@ const ExpensesBudget = ({ expensesData, setExpensesData }) => {
                                 </TableCell>
                                 <TableCell>
                                     <IconButton
-                                        onClick={() => deleteExpense(expense.id)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            deleteExpense(expense.id);
+                                        }}
                                         color="error"
                                         size="small"
                                     >
@@ -134,7 +178,7 @@ const ExpensesBudget = ({ expensesData, setExpensesData }) => {
                                 </TableCell>
                             </TableRow>
                         ))}
-                        <TableRow>
+                        <TableRow sx={{ backgroundColor: 'inherit' }}>
                             <TableCell colSpan={2}><strong>Total</strong></TableCell>
                             <TableCell colSpan={2}>
                                 <strong>${calculateTotal().toFixed(2)}</strong>

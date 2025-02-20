@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Table,
     TableBody,
@@ -15,6 +15,20 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const ActualIncome = ({ revenueData, setRevenueData }) => {
+    const [selectedRows, setSelectedRows] = useState(new Set());
+
+    const handleRowClick = (id) => {
+        setSelectedRows(prev => {
+            const newSelected = new Set(prev);
+            if (newSelected.has(id)) {
+                newSelected.delete(id);
+            } else {
+                newSelected.add(id);
+            }
+            return newSelected;
+        });
+    };
+
     const handleAmountChange = async (id, value) => {
         try {
             await axios.put(`http://localhost:5000/api/revenue/${id}`, {
@@ -53,6 +67,11 @@ const ActualIncome = ({ revenueData, setRevenueData }) => {
         try {
             await axios.delete(`http://localhost:5000/api/revenue/${id}`);
             setRevenueData(revenueData.filter(revenue => revenue.id !== id));
+            setSelectedRows(prev => {
+                const newSelected = new Set(prev);
+                newSelected.delete(id);
+                return newSelected;
+            });
             toast.success('Deleted income');
         } catch (error) {
             console.error('Error deleting income:', error);
@@ -79,13 +98,27 @@ const ActualIncome = ({ revenueData, setRevenueData }) => {
                     </TableHead>
                     <TableBody>
                         {revenueData.map((revenue) => (
-                            <TableRow key={revenue.id}>
+                            <TableRow
+                                key={revenue.id}
+                                onClick={() => handleRowClick(revenue.id)}
+                                sx={{
+                                    cursor: 'pointer',
+                                    backgroundColor: selectedRows.has(revenue.id) ? '#8a8a8a' : 'inherit',
+                                    '&:hover': {
+                                        backgroundColor: '#55c9c2',
+                                    },
+                                }}
+                            >
                                 <TableCell>{revenue.name}</TableCell>
                                 <TableCell>
                                     <TextField
                                         type="number"
                                         value={revenue.amount || ''}
-                                        onChange={(e) => handleAmountChange(revenue.id, e.target.value)}
+                                        onChange={(e) => {
+                                            e.stopPropagation();
+                                            handleAmountChange(revenue.id, e.target.value);
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
                                         variant="standard"
                                         InputProps={{
                                             startAdornment: '$'
@@ -96,13 +129,20 @@ const ActualIncome = ({ revenueData, setRevenueData }) => {
                                     <TextField
                                         type="date"
                                         value={revenue.date || ''}
-                                        onChange={(e) => handleDateChange(revenue.id, e.target.value)}
+                                        onChange={(e) => {
+                                            e.stopPropagation();
+                                            handleDateChange(revenue.id, e.target.value);
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
                                         variant="standard"
                                     />
                                 </TableCell>
                                 <TableCell>
                                     <IconButton
-                                        onClick={() => deleteIncome(revenue.id)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            deleteIncome(revenue.id);
+                                        }}
                                         color="error"
                                         size="small"
                                     >
