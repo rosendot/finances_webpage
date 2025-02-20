@@ -18,17 +18,53 @@ import { toast } from 'react-toastify';
 
 const IncomeBudget = ({ revenueData, setRevenueData }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
+    const [lastSelectedRow, setLastSelectedRow] = useState(null);
 
-    const handleRowClick = (id) => {
-        setSelectedRows(prev => {
-            const newSelected = new Set(prev);
-            if (newSelected.has(id)) {
-                newSelected.delete(id);
-            } else {
-                newSelected.add(id);
-            }
-            return newSelected;
-        });
+    const handleRowClick = (id, event) => {
+        if (event.shiftKey && lastSelectedRow !== null) {
+            // Get the indices of the current and last selected rows
+            const currentIndex = revenueData.findIndex(revenue => revenue.id === id);
+            const lastIndex = revenueData.findIndex(revenue => revenue.id === lastSelectedRow);
+
+            // Determine the range of rows to select/deselect
+            const start = Math.min(currentIndex, lastIndex);
+            const end = Math.max(currentIndex, lastIndex);
+
+            // Get the rows in the range
+            const rowsInRange = revenueData.slice(start, end + 1).map(revenue => revenue.id);
+
+            // Determine if we're selecting or deselecting based on the current row's state
+            const isSelecting = !selectedRows.has(id);
+
+            setSelectedRows(prev => {
+                const newSelected = new Set(prev);
+
+                // Apply the same action (select/deselect) to all rows in range
+                rowsInRange.forEach(rowId => {
+                    if (isSelecting) {
+                        newSelected.add(rowId);
+                    } else {
+                        newSelected.delete(rowId);
+                    }
+                });
+
+                return newSelected;
+            });
+        } else {
+            // Regular click behavior
+            setSelectedRows(prev => {
+                const newSelected = new Set(prev);
+                if (newSelected.has(id)) {
+                    newSelected.delete(id);
+                } else {
+                    newSelected.add(id);
+                }
+                return newSelected;
+            });
+        }
+
+        // Update the last selected row
+        setLastSelectedRow(id);
     };
 
     const handleExpectedAmountChange = async (id, value) => {
@@ -117,7 +153,7 @@ const IncomeBudget = ({ revenueData, setRevenueData }) => {
                         {revenueData.map((revenue) => (
                             <TableRow
                                 key={revenue.id}
-                                onClick={() => handleRowClick(revenue.id)}
+                                onClick={(event) => handleRowClick(revenue.id, event)}
                                 sx={{
                                     cursor: 'pointer',
                                     backgroundColor: selectedRows.has(revenue.id) ? '#8a8a8a' : 'inherit',
