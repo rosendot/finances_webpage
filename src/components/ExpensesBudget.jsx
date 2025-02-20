@@ -1,57 +1,156 @@
 import React from 'react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, Typography } from '@mui/material';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TextField,
+    Typography,
+    Button,
+    IconButton
+} from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 
-const ExpensesBudget = ({ expensesData, setExpensesData, categories }) => {
-    const handleExpectedAmountChange = (categoryId, value) => {
-        const updatedExpensesData = expensesData.map(expense =>
-            expense.category_id === categoryId ? { ...expense, expected_amount: value } : expense
-        );
-        setExpensesData(updatedExpensesData);
+const ExpensesBudget = ({ expensesData, setExpensesData }) => {
+    const handleExpectedAmountChange = async (id, value) => {
+        try {
+            await axios.put(`http://localhost:5000/api/expenses/${id}`, {
+                expected_amount: value
+            });
+
+            const updatedExpensesData = expensesData.map(expense =>
+                expense.id === id ? { ...expense, expected_amount: value } : expense
+            );
+            setExpensesData(updatedExpensesData);
+            toast.success('Updated expected amount');
+        } catch (error) {
+            console.error('Error updating expected amount:', error);
+            toast.error('Failed to update expected amount');
+        }
+    };
+
+    const addNewExpense = async () => {
+        try {
+            const newExpense = {
+                name: 'New Expense',
+                amount: 0,
+                expected_amount: 0,
+                date: new Date().toISOString().split('T')[0],
+                category: 'Miscellaneous',
+                is_recurring: false
+            };
+
+            const response = await axios.post('http://localhost:5000/api/expenses', newExpense);
+            setExpensesData([...expensesData, response.data]);
+            toast.success('Added new expense');
+        } catch (error) {
+            console.error('Error adding new expense:', error);
+            toast.error('Failed to add new expense');
+        }
+    };
+
+    const deleteExpense = async (id) => {
+        try {
+            await axios.delete(`http://localhost:5000/api/expenses/${id}`);
+            setExpensesData(expensesData.filter(expense => expense.id !== id));
+            toast.success('Deleted expense');
+        } catch (error) {
+            console.error('Error deleting expense:', error);
+            toast.error('Failed to delete expense');
+        }
+    };
+
+    const updateExpenseDetails = async (id, field, value) => {
+        try {
+            await axios.put(`http://localhost:5000/api/expenses/${id}`, { [field]: value });
+            const updatedExpensesData = expensesData.map(expense =>
+                expense.id === id ? { ...expense, [field]: value } : expense
+            );
+            setExpensesData(updatedExpensesData);
+            toast.success(`Updated expense ${field}`);
+        } catch (error) {
+            console.error(`Error updating expense ${field}:`, error);
+            toast.error(`Failed to update expense ${field}`);
+        }
     };
 
     const calculateTotal = () => {
-        return categories.reduce((total, category) => {
-            const categoryExpenses = expensesData.filter(expense => expense.category_id === category.id);
-            const categoryTotal = categoryExpenses.reduce((sum, expense) => sum + parseFloat(expense.expected_amount || 0), 0);
-            return total + categoryTotal;
-        }, 0);
+        return expensesData.reduce((total, expense) => total + parseFloat(expense.expected_amount || 0), 0);
     };
 
     return (
-        <div>
+        <div style={{ padding: '20px' }}>
             <Typography variant="h6" gutterBottom>Expenses Budget</Typography>
-            <TableContainer component={Paper}>
+            <TableContainer>
                 <Table>
                     <TableHead>
                         <TableRow>
+                            <TableCell>Name</TableCell>
                             <TableCell>Category</TableCell>
                             <TableCell>Expected Amount</TableCell>
+                            <TableCell>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {categories.map((category) => {
-                            const categoryExpenses = expensesData.filter(expense => expense.category_id === category.id);
-                            const categoryTotal = categoryExpenses.reduce((sum, expense) => sum + parseFloat(expense.expected_amount || 0), 0);
-                            return (
-                                <TableRow key={category.id}>
-                                    <TableCell>{category.name}</TableCell>
-                                    <TableCell>
-                                        <TextField
-                                            type="number"
-                                            value={categoryTotal || ''}
-                                            onChange={(e) => handleExpectedAmountChange(category.id, e.target.value)}
-                                        />
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })}
+                        {expensesData.map((expense) => (
+                            <TableRow key={expense.id}>
+                                <TableCell>
+                                    <TextField
+                                        value={expense.name}
+                                        onChange={(e) => updateExpenseDetails(expense.id, 'name', e.target.value)}
+                                        variant="standard"
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <TextField
+                                        value={expense.category || ''}
+                                        onChange={(e) => updateExpenseDetails(expense.id, 'category', e.target.value)}
+                                        variant="standard"
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <TextField
+                                        type="number"
+                                        value={expense.expected_amount || ''}
+                                        onChange={(e) => handleExpectedAmountChange(expense.id, e.target.value)}
+                                        variant="standard"
+                                        InputProps={{
+                                            startAdornment: '$'
+                                        }}
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <IconButton
+                                        onClick={() => deleteExpense(expense.id)}
+                                        color="error"
+                                        size="small"
+                                    >
+                                        <DeleteIcon />
+                                    </IconButton>
+                                </TableCell>
+                            </TableRow>
+                        ))}
                         <TableRow>
-                            <TableCell><strong>Total</strong></TableCell>
-                            <TableCell><strong>${calculateTotal().toFixed(2)}</strong></TableCell>
+                            <TableCell colSpan={2}><strong>Total</strong></TableCell>
+                            <TableCell colSpan={2}>
+                                <strong>${calculateTotal().toFixed(2)}</strong>
+                            </TableCell>
                         </TableRow>
                     </TableBody>
                 </Table>
             </TableContainer>
+            <Button
+                variant="contained"
+                color="primary"
+                onClick={addNewExpense}
+                style={{ marginTop: '20px' }}
+            >
+                Add New Expense
+            </Button>
         </div>
     );
 };
