@@ -58,10 +58,38 @@ function Dashboard() {
         const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 const csvData = e.target.result;
                 const processedData = processCSV(csvData);
-                updateDataFromCSV(processedData);
+
+                // Update your state/database with the processed data
+                try {
+                    // Update income
+                    for (const income of processedData.income) {
+                        await axios.post('http://localhost:5000/api/revenue', {
+                            name: income.name,
+                            amount: income.amount,
+                            date: income.date,
+                            is_recurring: income.isRecurring
+                        });
+                    }
+
+                    // Update expenses
+                    for (const expense of processedData.expenses) {
+                        await axios.post('http://localhost:5000/api/expenses', {
+                            name: expense.name,
+                            amount: expense.amount,
+                            date: expense.date,
+                            category: expense.category,
+                            is_recurring: expense.isRecurring
+                        });
+                    }
+
+                    toast.success('CSV data imported successfully!');
+                } catch (error) {
+                    console.error('Error importing CSV data:', error);
+                    toast.error('Failed to import CSV data');
+                }
             };
             reader.readAsText(file);
         }
