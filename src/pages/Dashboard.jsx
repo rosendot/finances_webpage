@@ -8,6 +8,7 @@ import ProfitSummary from '../components/ProfitSummary';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { processCSV } from '../utils/csvProcessor';
+import { formatDateForAPI } from '../utils/dateUtils';
 
 function Dashboard() {
     const [revenueData, setRevenueData] = useState([]);
@@ -21,6 +22,7 @@ function Dashboard() {
     const fetchRevenueData = async () => {
         try {
             const response = await axios.get('http://localhost:5000/api/revenue');
+            console.log('revenue data:', response.data);
             setRevenueData(response.data);
         } catch (error) {
             console.error('Error fetching revenue data:', error);
@@ -31,6 +33,7 @@ function Dashboard() {
     const fetchExpensesData = async () => {
         try {
             const response = await axios.get('http://localhost:5000/api/expenses');
+            console.log('expenses data:', response.data);
             setExpensesData(response.data);
         } catch (error) {
             console.error('Error fetching expenses data:', error);
@@ -58,65 +61,71 @@ function Dashboard() {
         const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = async (e) => {
+            reader.onload = (e) => {
                 const csvData = e.target.result;
                 const processedData = processCSV(csvData);
 
-                // Update your state/database with the processed data
-                try {
-                    // Update income
-                    for (const income of processedData.income) {
-                        await axios.post('http://localhost:5000/api/revenue', {
+                let incomeProcessed = 0;
+                let expensesProcessed = 0;
+                const totalItems = processedData.income.length + processedData.expenses.length;
+
+                const newRevenueData = [...revenueData];
+                const newExpensesData = [...expensesData];
+
+                // Process income synchronously
+                for (const income of processedData.income) {
+                    try {
+                        axios.post('http://localhost:5000/api/revenue', {
                             name: income.name,
                             amount: income.amount,
-                            date: income.date,
+                            date: formatDateForAPI(income.date),
                             is_recurring: income.isRecurring
+                        }).then(response => {
+                            newRevenueData.push(response.data);
                         });
+                        incomeProcessed++;
+                        toast.info(`Processed ${incomeProcessed + expensesProcessed} of ${totalItems} items (Income: ${income.name})`);
+                    } catch (error) {
+                        toast.error(`Failed to import income: ${income.name}`);
+                        console.error('Error importing income:', error);
                     }
+                }
 
-                    // Update expenses
-                    for (const expense of processedData.expenses) {
-                        await axios.post('http://localhost:5000/api/expenses', {
+                // Process expenses synchronously
+                for (const expense of processedData.expenses) {
+                    try {
+                        axios.post('http://localhost:5000/api/expenses', {
                             name: expense.name,
                             amount: expense.amount,
-                            date: expense.date,
+                            date: formatDateForAPI(expense.date),
                             category: expense.category,
                             is_recurring: expense.isRecurring
+                        }).then(response => {
+                            newExpensesData.push(response.data);
                         });
+                        expensesProcessed++;
+                        toast.info(`Processed ${incomeProcessed + expensesProcessed} of ${totalItems} items (Expense: ${expense.name})`);
+                    } catch (error) {
+                        toast.error(`Failed to import expense: ${expense.name}`);
+                        console.error('Error importing expense:', error);
                     }
+                }
 
-                    toast.success('CSV data imported successfully!');
-                } catch (error) {
-                    console.error('Error importing CSV data:', error);
-                    toast.error('Failed to import CSV data');
+                // Update state with new data
+                setRevenueData(newRevenueData);
+                setExpensesData(newExpensesData);
+
+                // Final summary
+                const successfulImports = incomeProcessed + expensesProcessed;
+                const failedImports = totalItems - successfulImports;
+
+                if (failedImports === 0) {
+                    toast.success(`Import complete! Successfully imported ${successfulImports} items`);
+                } else {
+                    toast.warning(`Import complete with some issues. Imported ${successfulImports} items, ${failedImports} failed`);
                 }
             };
             reader.readAsText(file);
-        }
-    };
-
-    const updateDataFromCSV = async (processedData) => {
-        const { income, expenses } = processedData;
-
-        try {
-            // Update income records
-            for (const item of income) {
-                await axios.post('http://localhost:5000/api/revenue', item);
-            }
-
-            // Update expense records
-            for (const item of expenses) {
-                await axios.post('http://localhost:5000/api/expenses', item);
-            }
-
-            // Refresh data
-            fetchRevenueData();
-            fetchExpensesData();
-
-            toast.success('CSV data imported successfully!');
-        } catch (error) {
-            console.error('Error updating data:', error);
-            toast.error('Failed to import some data');
         }
     };
 

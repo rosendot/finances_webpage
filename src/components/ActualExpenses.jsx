@@ -14,6 +14,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { formatDateForInput, formatDateForAPI } from '../utils/dateUtils';
 
 const ActualExpenses = ({ expensesData, setExpensesData }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
@@ -228,10 +229,10 @@ const ActualExpenses = ({ expensesData, setExpensesData }) => {
                                         <TableCell>
                                             <TextField
                                                 type="date"
-                                                value={expense.date || ''}
+                                                value={formatDateForInput(expense.date)}
                                                 onChange={(e) => {
                                                     e.stopPropagation();
-                                                    handleDateChange(expense.id, e.target.value);
+                                                    handleDateChange(expense.id, formatDateForAPI(e.target.value));
                                                 }}
                                                 onClick={(e) => e.stopPropagation()}
                                                 variant="standard"

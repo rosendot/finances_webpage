@@ -15,6 +15,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { formatDateForInput, formatDateForAPI } from '../utils/dateUtils';
 
 const IncomeBudget = ({ revenueData, setRevenueData }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
@@ -90,7 +91,7 @@ const IncomeBudget = ({ revenueData, setRevenueData }) => {
                 name: 'New Income Source',
                 amount: 0,
                 expected_amount: 0,
-                date: new Date().toISOString().split('T')[0],
+                date: formatDateForAPI(new Date()),
                 is_recurring: false
             };
 

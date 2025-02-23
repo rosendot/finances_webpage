@@ -14,6 +14,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { formatDateForInput, formatDateForAPI } from '../utils/dateUtils';
 
 const ExpensesBudget = ({ expensesData, setExpensesData }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
@@ -89,7 +90,7 @@ const ExpensesBudget = ({ expensesData, setExpensesData }) => {
                 name: 'New Expense',
                 amount: 0,
                 expected_amount: 0,
-                date: new Date().toISOString().split('T')[0],
+                date: formatDateForAPI(new Date()),
                 category: 'Miscellaneous',
                 is_recurring: false
             };
