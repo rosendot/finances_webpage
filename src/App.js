@@ -29,7 +29,7 @@ function App() {
 
   return (
     <ThemeProvider theme={darkTheme}>
-      <ToastContainer autoClose={1500}/>
+      <ToastContainer autoClose={1500} />
       <Router>
         <Box sx={{ display: 'flex' }}>
           <AppBar position="fixed">

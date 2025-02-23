@@ -39,17 +39,6 @@ app.put('/api/revenue/:id', async (req, res) => {
     }
 });
 
-app.delete('/api/revenue/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        await pool.query('DELETE FROM revenue WHERE id = $1', [id]);
-        res.json({ message: 'Revenue deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting revenue:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
 // API endpoint for expenses data
 app.get('/api/expenses', async (req, res) => {
     try {
@@ -79,17 +68,6 @@ app.put('/api/expenses/:id', async (req, res) => {
         res.json(result.rows[0]);
     } catch (error) {
         console.error('Error updating expense:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-app.delete('/api/expenses/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        await pool.query('DELETE FROM expenses WHERE id = $1', [id]);
-        res.json({ message: 'Expense deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting expense:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -179,6 +157,78 @@ app.post('/api/expenses', async (req, res) => {
         res.json(result.rows[0]);
     } catch (error) {
         console.error('Error adding expense:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Put the bulk delete routes BEFORE the individual delete routes
+app.delete('/api/revenue/bulk', async (req, res) => {
+    try {
+        const { ids } = req.body;
+        const validIds = ids.map(id => Number(id)).filter(id => !isNaN(id));
+
+        if (validIds.length === 0) {
+            return res.status(400).json({ error: 'No valid IDs provided' });
+        }
+
+        const result = await pool.query(
+            'DELETE FROM revenue WHERE id = ANY($1::int[])',
+            [validIds]
+        );
+
+        res.json({
+            message: 'Revenues deleted successfully',
+            count: result.rowCount
+        });
+    } catch (error) {
+        console.error('Error bulk deleting revenues:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.delete('/api/expenses/bulk', async (req, res) => {
+    try {
+        const { ids } = req.body;
+        const validIds = ids.map(id => Number(id)).filter(id => !isNaN(id));
+
+        if (validIds.length === 0) {
+            return res.status(400).json({ error: 'No valid IDs provided' });
+        }
+
+        const result = await pool.query(
+            'DELETE FROM expenses WHERE id = ANY($1::int[])',
+            [validIds]
+        );
+
+        res.json({
+            message: 'Expenses deleted successfully',
+            count: result.rowCount
+        });
+    } catch (error) {
+        console.error('Error bulk deleting expenses:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Then put the individual delete routes AFTER
+app.delete('/api/revenue/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query('DELETE FROM revenue WHERE id = $1', [id]);
+        res.json({ message: 'Revenue deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting revenue:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.delete('/api/expenses/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query('DELETE FROM expenses WHERE id = $1', [id]);
+        res.json({ message: 'Expense deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting expense:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

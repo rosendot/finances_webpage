@@ -121,6 +121,22 @@ const IncomeBudget = ({ revenueData, setRevenueData }) => {
         }
     };
 
+    const deleteSelectedIncomes = async () => {
+        try {
+            const selectedIds = Array.from(selectedRows);
+            await axios.delete('http://localhost:5000/api/revenue/bulk', {
+                data: { ids: selectedIds }
+            });
+
+            setRevenueData(revenueData.filter(revenue => !selectedRows.has(revenue.id)));
+            setSelectedRows(new Set());
+            toast.success('Successfully deleted selected items');
+        } catch (error) {
+            console.error('Error deleting selected incomes:', error);
+            toast.error('Failed to delete selected items');
+        }
+    };
+
     const updateIncomeName = async (id, name) => {
         try {
             await axios.put(`http://localhost:5000/api/revenue/${id}`, { name });
@@ -171,12 +187,7 @@ const IncomeBudget = ({ revenueData, setRevenueData }) => {
                             backgroundColor: 'rgba(255, 152, 0, 0.04)'
                         }
                     }}
-                    onClick={async () => {
-                        for (const id of selectedRows) {
-                            await deleteIncome(id);
-                        }
-                        setSelectedRows(new Set());
-                    }}
+                    onClick={deleteSelectedIncomes}
                 >
                     Delete Selected
                 </Button>

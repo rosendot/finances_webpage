@@ -168,6 +168,22 @@ const ActualExpenses = ({ expensesData, setExpensesData }) => {
         }
     };
 
+    const deleteSelectedExpenses = async () => {
+        try {
+            const selectedIds = Array.from(selectedRows);
+            await axios.delete('http://localhost:5000/api/expenses/bulk', {
+                data: { ids: selectedIds }
+            });
+
+            setExpensesData(expensesData.filter(expense => !selectedRows.has(expense.id)));
+            setSelectedRows(new Set());
+            toast.success('Successfully deleted selected items');
+        } catch (error) {
+            console.error('Error deleting selected expenses:', error);
+            toast.error('Failed to delete selected items');
+        }
+    };
+
     const calculateTotal = () => {
         return expensesData.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
     };
@@ -217,12 +233,7 @@ const ActualExpenses = ({ expensesData, setExpensesData }) => {
                             backgroundColor: 'rgba(255, 152, 0, 0.04)'
                         }
                     }}
-                    onClick={async () => {
-                        for (const id of selectedRows) {
-                            await deleteExpense(id);
-                        }
-                        setSelectedRows(new Set());
-                    }}
+                    onClick={deleteSelectedExpenses}
                 >
                     Delete Selected
                 </Button>
