@@ -189,16 +189,22 @@ const ActualExpenses = ({ expensesData, setExpensesData }) => {
         <div style={{ padding: '20px' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 2 }}>
                 <Typography variant="h6">Actual Expenses</Typography>
-                <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => {
-                        const allIds = expensesData.map(expense => expense.id);
-                        setSelectedRows(new Set(allIds));
-                    }}
-                >
-                    Select All
-                </Button>
+                {expensesData.length > 0 && (
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        color={expensesData.every(expense => selectedRows.has(expense.id)) ? 'secondary' : 'primary'}
+                        onClick={() => {
+                            const allIds = new Set(expensesData.map(expense => expense.id));
+                            const areAllSelected = expensesData.every(expense => selectedRows.has(expense.id));
+                            setSelectedRows(areAllSelected ? new Set() : allIds);
+                        }}
+                    >
+                        {expensesData.every(expense => selectedRows.has(expense.id))
+                            ? 'Deselect All'
+                            : 'Select All'}
+                    </Button>
+                )}
             </Box>
             <TableContainer>
                 <Table>

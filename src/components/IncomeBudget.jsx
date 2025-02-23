@@ -143,16 +143,22 @@ const IncomeBudget = ({ revenueData, setRevenueData }) => {
         <div style={{ padding: '20px' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 2 }}>
                 <Typography variant="h6">Income Budget</Typography>
-                <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => {
-                        const allIds = revenueData.map(revenue => revenue.id);
-                        setSelectedRows(new Set(allIds));
-                    }}
-                >
-                    Select All
-                </Button>
+                {revenueData.length > 0 && (
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        color={revenueData.every(revenue => selectedRows.has(revenue.id)) ? 'secondary' : 'primary'}
+                        onClick={() => {
+                            const allIds = new Set(revenueData.map(revenue => revenue.id));
+                            const areAllSelected = revenueData.every(revenue => selectedRows.has(revenue.id));
+                            setSelectedRows(areAllSelected ? new Set() : allIds);
+                        }}
+                    >
+                        {revenueData.every(revenue => selectedRows.has(revenue.id))
+                            ? 'Deselect All'
+                            : 'Select All'}
+                    </Button>
+                )}
             </Box>
             <TableContainer>
                 <Table>
