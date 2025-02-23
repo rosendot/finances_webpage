@@ -205,6 +205,27 @@ const ActualExpenses = ({ expensesData, setExpensesData }) => {
                             : 'Select All'}
                     </Button>
                 )}
+                <Button
+                    variant="outlined"
+                    size="small"
+                    disabled={selectedRows.size === 0}
+                    sx={{
+                        color: selectedRows.size > 0 ? '#ff9800' : 'grey',
+                        borderColor: selectedRows.size > 0 ? '#ff9800' : 'grey',
+                        '&:hover': {
+                            borderColor: '#f57c00',
+                            backgroundColor: 'rgba(255, 152, 0, 0.04)'
+                        }
+                    }}
+                    onClick={async () => {
+                        for (const id of selectedRows) {
+                            await deleteExpense(id);
+                        }
+                        setSelectedRows(new Set());
+                    }}
+                >
+                    Delete Selected
+                </Button>
             </Box>
             <TableContainer>
                 <Table>
