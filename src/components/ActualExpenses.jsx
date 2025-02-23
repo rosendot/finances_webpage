@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Table,
     TableBody,
@@ -9,7 +9,8 @@ import {
     TextField,
     Typography,
     Button,
-    IconButton
+    IconButton,
+    Box
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
@@ -19,6 +20,20 @@ import { formatDateForInput, formatDateForAPI } from '../utils/dateUtils';
 const ActualExpenses = ({ expensesData, setExpensesData }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [lastSelectedRow, setLastSelectedRow] = useState(null);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+                e.preventDefault(); // Prevent default browser select-all
+                // Select all rows
+                const allIds = expensesData.map(expense => expense.id);
+                setSelectedRows(new Set(allIds));
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [expensesData]);
 
     const handleRowClick = (id, event) => {
         if (event.shiftKey && lastSelectedRow !== null) {
@@ -172,7 +187,19 @@ const ActualExpenses = ({ expensesData, setExpensesData }) => {
 
     return (
         <div style={{ padding: '20px' }}>
-            <Typography variant="h6" gutterBottom>Actual Expenses</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 2 }}>
+                <Typography variant="h6">Actual Expenses</Typography>
+                <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                        const allIds = expensesData.map(expense => expense.id);
+                        setSelectedRows(new Set(allIds));
+                    }}
+                >
+                    Select All
+                </Button>
+            </Box>
             <TableContainer>
                 <Table>
                     <TableHead>

@@ -9,7 +9,8 @@ import {
     TextField,
     Typography,
     Button,
-    IconButton
+    IconButton,
+    Box
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
@@ -140,7 +141,19 @@ const ExpensesBudget = ({ expensesData, setExpensesData }) => {
 
     return (
         <div style={{ padding: '20px' }}>
-            <Typography variant="h6" gutterBottom>Expenses Budget</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 2 }}>
+                <Typography variant="h6">Expenses Budget</Typography>
+                <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                        const allIds = expensesData.map(expense => expense.id);
+                        setSelectedRows(new Set(allIds));
+                    }}
+                >
+                    Select All
+                </Button>
+            </Box>
             <TableContainer>
                 <Table>
                     <TableHead>

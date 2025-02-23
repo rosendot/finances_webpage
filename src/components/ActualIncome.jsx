@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Table,
     TableBody,
@@ -8,7 +8,9 @@ import {
     TableRow,
     TextField,
     Typography,
-    IconButton
+    IconButton,
+    Box,
+    Button
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
@@ -18,6 +20,19 @@ import { formatDateForInput, formatDateForAPI } from '../utils/dateUtils';
 const ActualIncome = ({ revenueData, setRevenueData }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [lastSelectedRow, setLastSelectedRow] = useState(null);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+                e.preventDefault();
+                const allIds = revenueData.map(revenue => revenue.id);
+                setSelectedRows(new Set(allIds));
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [revenueData]);
 
     const handleRowClick = (id, event) => {
         if (event.shiftKey && lastSelectedRow !== null) {
@@ -122,7 +137,19 @@ const ActualIncome = ({ revenueData, setRevenueData }) => {
 
     return (
         <div style={{ padding: '20px' }}>
-            <Typography variant="h6" gutterBottom>Actual Income</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 2 }}>
+                <Typography variant="h6">Actual Income</Typography>
+                <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                        const allIds = revenueData.map(revenue => revenue.id);
+                        setSelectedRows(new Set(allIds));
+                    }}
+                >
+                    Select All
+                </Button>
+            </Box>
             <TableContainer>
                 <Table>
                     <TableHead>
