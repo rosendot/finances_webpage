@@ -131,7 +131,7 @@ function Dashboard() {
 
     return (
         <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2, gap: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
                 <input
                     accept=".csv"
                     style={{ display: 'none' }}
@@ -145,19 +145,20 @@ function Dashboard() {
                     </Button>
                 </label>
             </Box>
-            <Grid container spacing={2} style={{ height: 'calc(100vh - 120px)' }}>
+
+            <Grid container spacing={1} >
                 <Grid item xs={6} style={{ height: '50%' }}>
-                    <Paper elevation={3} style={{ height: '100%', overflow: 'auto' }}>
+                    <Paper style={{ height: '100%', overflow: 'auto' }}>
                         <IncomeBudget revenueData={revenueData} setRevenueData={setRevenueData} />
                     </Paper>
                 </Grid>
                 <Grid item xs={6} style={{ height: '50%' }}>
-                    <Paper elevation={3} style={{ height: '100%', overflow: 'auto' }}>
+                    <Paper style={{ height: '100%', overflow: 'auto' }}>
                         <ActualIncome revenueData={revenueData} setRevenueData={setRevenueData} />
                     </Paper>
                 </Grid>
                 <Grid item xs={6} style={{ height: '50%' }}>
-                    <Paper elevation={3} style={{ height: '100%', overflow: 'auto' }}>
+                    <Paper style={{ height: '100%', overflow: 'auto' }}>
                         <ExpensesBudget expensesData={expensesData} setExpensesData={setExpensesData} />
                     </Paper>
                     <ProfitSummary
@@ -168,12 +169,12 @@ function Dashboard() {
                     />
                 </Grid>
                 <Grid item xs={6} style={{ height: '50%' }}>
-                    <Paper elevation={3} style={{ height: '100%', overflow: 'auto' }}>
+                    <Paper style={{ height: '100%', overflow: 'auto' }}>
                         <ActualExpenses expensesData={expensesData} setExpensesData={setExpensesData} />
                     </Paper>
                 </Grid>
             </Grid>
-        </Box>
+        </Box >
     );
 }
 
