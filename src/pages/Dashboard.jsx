@@ -57,72 +57,63 @@ function Dashboard() {
         return expensesData.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
     };
 
-    const handleCSVImport = (event) => {
+    const handleCSVImport = async (event) => {
         const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 const csvData = e.target.result;
                 const processedData = processCSV(csvData);
 
-                let incomeProcessed = 0;
-                let expensesProcessed = 0;
-                const totalItems = processedData.income.length + processedData.expenses.length;
+                toast.info(`Processing ${processedData.income.length + processedData.expenses.length} items...`);
 
-                const newRevenueData = [...revenueData];
-                const newExpensesData = [...expensesData];
-
-                // Process income synchronously
-                for (const income of processedData.income) {
-                    try {
-                        axios.post('http://localhost:5000/api/revenue', {
+                try {
+                    // Bulk import income items
+                    if (processedData.income.length > 0) {
+                        const incomeItems = processedData.income.map(income => ({
                             name: income.name,
                             amount: income.amount,
+                            expected_amount: 0, // Set default or calculate as needed
                             date: formatDateForAPI(income.date),
-                            is_recurring: income.isRecurring
-                        }).then(response => {
-                            newRevenueData.push(response.data);
-                        });
-                        incomeProcessed++;
-                        toast.info(`Processed ${incomeProcessed + expensesProcessed} of ${totalItems} items (Income: ${income.name})`);
-                    } catch (error) {
-                        toast.error(`Failed to import income: ${income.name}`);
-                        console.error('Error importing income:', error);
-                    }
-                }
+                            is_recurring: income.isRecurring,
+                            category: 'Income'
+                        }));
 
-                // Process expenses synchronously
-                for (const expense of processedData.expenses) {
-                    try {
-                        axios.post('http://localhost:5000/api/expenses', {
+                        toast.info(`Importing ${incomeItems.length} income transactions...`);
+                        const incomeResponse = await axios.post('http://localhost:5000/api/revenue/bulk', {
+                            items: incomeItems
+                        });
+
+                        // Update revenue data with new items
+                        setRevenueData(prevData => [...prevData, ...incomeResponse.data]);
+                        toast.success(`Successfully imported ${incomeResponse.data.length} income transactions`);
+                    }
+
+                    // Bulk import expense items
+                    if (processedData.expenses.length > 0) {
+                        const expenseItems = processedData.expenses.map(expense => ({
                             name: expense.name,
                             amount: expense.amount,
+                            expected_amount: 0, // Set default or calculate as needed
                             date: formatDateForAPI(expense.date),
-                            category: expense.category,
-                            is_recurring: expense.isRecurring
-                        }).then(response => {
-                            newExpensesData.push(response.data);
+                            is_recurring: expense.isRecurring,
+                            category: expense.category
+                        }));
+
+                        toast.info(`Importing ${expenseItems.length} expense transactions...`);
+                        const expenseResponse = await axios.post('http://localhost:5000/api/expenses/bulk', {
+                            items: expenseItems
                         });
-                        expensesProcessed++;
-                        toast.info(`Processed ${incomeProcessed + expensesProcessed} of ${totalItems} items (Expense: ${expense.name})`);
-                    } catch (error) {
-                        toast.error(`Failed to import expense: ${expense.name}`);
-                        console.error('Error importing expense:', error);
+
+                        // Update expenses data with new items
+                        setExpensesData(prevData => [...prevData, ...expenseResponse.data]);
+                        toast.success(`Successfully imported ${expenseResponse.data.length} expense transactions`);
                     }
-                }
 
-                // Update state with new data
-                setRevenueData(newRevenueData);
-                setExpensesData(newExpensesData);
-
-                // Final summary
-                const successfulImports = incomeProcessed + expensesProcessed;
-                const failedImports = totalItems - successfulImports;
-
-                if (failedImports === 0) {
-                    toast.success(`Import complete! Successfully imported ${successfulImports} items`);
-                } else {
-                    toast.warning(`Import complete with some issues. Imported ${successfulImports} items, ${failedImports} failed`);
+                    toast.success('CSV import completed successfully!');
+                } catch (error) {
+                    console.error('Error during bulk import:', error);
+                    toast.error('Failed to import CSV data. Please try again or check the server logs.');
                 }
             };
             reader.readAsText(file);

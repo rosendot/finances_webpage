@@ -233,6 +233,146 @@ app.delete('/api/expenses/:id', async (req, res) => {
     }
 });
 
+// Add these new endpoints to server.js
+app.post('/api/revenue/bulk', async (req, res) => {
+    try {
+        const { items } = req.body;
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ error: 'Invalid input: expected an array of items' });
+        }
+
+        // Use a single transaction for better performance
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const insertPromises = items.map(item => {
+                const { name, amount, expected_amount, date, is_recurring, category, payment_method, notes } = item;
+
+                const query = `
+                    INSERT INTO revenue (
+                        name,
+                        amount,
+                        expected_amount,
+                        date,
+                        is_recurring,
+                        category,
+                        payment_method,
+                        notes,
+                        status,
+                        created_at,
+                        tax_rate,
+                        pre_tax,
+                        frequency,
+                        bank_account,
+                        source
+                    ) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', CURRENT_TIMESTAMP, 0, false, 'monthly', '', '')
+                    RETURNING *
+                `;
+
+                const values = [
+                    name,
+                    amount || 0,
+                    expected_amount || 0,
+                    date,
+                    is_recurring || false,
+                    category || 'Uncategorized',
+                    payment_method || '',
+                    notes || ''
+                ];
+
+                return client.query(query, values);
+            });
+
+            const results = await Promise.all(insertPromises);
+            await client.query('COMMIT');
+
+            // Extract the inserted rows from results
+            const insertedItems = results.map(result => result.rows[0]);
+            res.json(insertedItems);
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+    } catch (error) {
+        console.error('Error bulk inserting revenue:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/expenses/bulk', async (req, res) => {
+    try {
+        const { items } = req.body;
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ error: 'Invalid input: expected an array of items' });
+        }
+
+        // Use a single transaction for better performance
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const insertPromises = items.map(item => {
+                const { name, amount, expected_amount, date, is_recurring, category, merchant, notes, payment_method } = item;
+
+                const query = `
+                    INSERT INTO expenses (
+                        name,
+                        amount,
+                        expected_amount,
+                        date,
+                        is_recurring,
+                        category,
+                        merchant,
+                        notes,
+                        payment_method,
+                        status,
+                        created_at,
+                        tax_deductible,
+                        frequency,
+                        receipt_url,
+                        due_date
+                    ) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending', CURRENT_TIMESTAMP, false, 'monthly', '', $4)
+                    RETURNING *
+                `;
+
+                const values = [
+                    name,
+                    amount || 0,
+                    expected_amount || 0,
+                    date,
+                    is_recurring || false,
+                    category || 'Miscellaneous',
+                    merchant || '',
+                    notes || '',
+                    payment_method || ''
+                ];
+
+                return client.query(query, values);
+            });
+
+            const results = await Promise.all(insertPromises);
+            await client.query('COMMIT');
+
+            // Extract the inserted rows from results
+            const insertedItems = results.map(result => result.rows[0]);
+            res.json(insertedItems);
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+    } catch (error) {
+        console.error('Error bulk inserting expenses:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Start the server
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
