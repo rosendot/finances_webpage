@@ -57,14 +57,25 @@ export const processCSV = (csvData) => {
 
         const cleanedDescription = cleanDescription(description);
         const parsedAmount = parseFloat(amount);
-        const formattedDate = parseDate(date); // Use our new parseDate function
+        const parsedBalance = parseFloat(balance);
+        const formattedDate = parseDate(date);
+
+        // Get previous transaction's balance if it exists
+        const prevBalance = i > startIndex ?
+            parseFloat(lines[i - 1].split(',')[5].replace(/["\r]/g, '').trim()) :
+            parsedBalance - parsedAmount;
+
+        // Determine if this is income or expense by checking if balance increased
+        const isIncome = parsedBalance > prevBalance;
 
         transactions.push({
             description: cleanedDescription,
             originalDescription: description,
             amount: parsedAmount,
             date: formattedDate,
-            type
+            type,
+            balance: parsedBalance,
+            isIncome
         });
 
         // Track potential recurring patterns
@@ -84,13 +95,13 @@ export const processCSV = (csvData) => {
             ...transaction,
             isRecurring,
             category,
-            transactionType: transaction.amount >= 0 ? 'income' : 'expense'
+            transactionType: transaction.isIncome ? 'income' : 'expense'
         };
     });
 
     // Separate income and expenses
     const income = categorizedTransactions
-        .filter(t => t.amount > 0)
+        .filter(t => t.isIncome)
         .map(t => ({
             name: t.originalDescription,
             amount: t.amount,
@@ -100,7 +111,7 @@ export const processCSV = (csvData) => {
         }));
 
     const expenses = categorizedTransactions
-        .filter(t => t.amount < 0)
+        .filter(t => !t.isIncome)
         .map(t => ({
             name: t.originalDescription,
             amount: Math.abs(t.amount),
