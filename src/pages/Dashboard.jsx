@@ -146,7 +146,7 @@ function Dashboard() {
                 </label>
             </Box>
 
-            <Grid container spacing={1} >
+            <Grid container spacing={1} style={{ height: '80vh' }}>
                 <Grid item xs={6} style={{ height: '50%' }}>
                     <Paper style={{ height: '100%', overflow: 'auto' }}>
                         <IncomeBudget revenueData={revenueData} setRevenueData={setRevenueData} />
