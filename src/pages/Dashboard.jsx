@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Grid, Paper, Button, Box } from '@mui/material';
+import React, { useEffect, useState, useContext } from 'react';
+import { Grid, Paper, Button, Box, Fab, Snackbar, Alert } from '@mui/material';
+import SaveIcon from '@mui/icons-material/Save';
 import IncomeBudget from '../components/IncomeBudget';
 import ActualIncome from '../components/ActualIncome';
 import ExpensesBudget from '../components/ExpensesBudget';
@@ -11,18 +12,28 @@ import { formatDateForAPI } from '../utils/dateUtils';
 import { revenueApi, expensesApi } from '../api/api';
 import { processQBO } from '../utils/qboProcessor';
 
+// Create a new context for managing changes
+export const ChangeContext = React.createContext();
+
 function Dashboard() {
     const [revenueData, setRevenueData] = useState([]);
     const [expensesData, setExpensesData] = useState([]);
-    // New state for budget categories - this will be calculated from expensesData
     const [budgetCategories, setBudgetCategories] = useState([]);
+
+    // Add states for managing changes
+    const [pendingChanges, setPendingChanges] = useState({
+        revenue: {},
+        expenses: {}
+    });
+    const [hasChanges, setHasChanges] = useState(false);
+    const [showFab, setShowFab] = useState(false);
+    const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
 
     useEffect(() => {
         fetchRevenueData();
         fetchExpensesData();
     }, []);
 
-    // Add this effect to update budget categories whenever expenses change
     useEffect(() => {
         // Group expenses by category and aggregate
         const categories = {};
@@ -47,6 +58,21 @@ function Dashboard() {
         setBudgetCategories(Object.values(categories));
     }, [expensesData]);
 
+    // Effect to set hasChanges whenever pendingChanges changes
+    useEffect(() => {
+        const hasRevenueChanges = Object.keys(pendingChanges.revenue).length > 0;
+        const hasExpensesChanges = Object.keys(pendingChanges.expenses).length > 0;
+
+        setHasChanges(hasRevenueChanges || hasExpensesChanges);
+
+        if (hasRevenueChanges || hasExpensesChanges) {
+            setIsSnackbarOpen(true);
+        } else {
+            setIsSnackbarOpen(false);
+            setShowFab(false);
+        }
+    }, [pendingChanges]);
+
     const fetchRevenueData = async () => {
         try {
             const data = await revenueApi.getAll();
@@ -67,6 +93,30 @@ function Dashboard() {
         }
     };
 
+    const addRevenuePendingChange = (id, changes) => {
+        setPendingChanges(prev => ({
+            ...prev,
+            revenue: {
+                ...prev.revenue,
+                [id]: {
+                    ...changes
+                }
+            }
+        }));
+    };
+
+    const addExpensePendingChange = (id, changes) => {
+        setPendingChanges(prev => ({
+            ...prev,
+            expenses: {
+                ...prev.expenses,
+                [id]: {
+                    ...changes
+                }
+            }
+        }));
+    };
+
     const calculateTotalBudgetIncome = () => {
         return revenueData.reduce((total, income) => total + parseFloat(income.expected_amount || 0), 0);
     };
@@ -81,6 +131,63 @@ function Dashboard() {
 
     const calculateTotalActualExpenses = () => {
         return expensesData.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
+    };
+
+    const handleSaveChanges = async () => {
+        // Track success counts
+        let revenueUpdated = 0;
+        let expensesUpdated = 0;
+
+        // Update revenue items
+        const revenueIds = Object.keys(pendingChanges.revenue);
+        for (const id of revenueIds) {
+            try {
+                await revenueApi.update(id, pendingChanges.revenue[id]);
+                revenueUpdated++;
+            } catch (error) {
+                console.error('Error updating revenue:', error);
+                toast.error(`Failed to update revenue item #${id}`);
+            }
+        }
+
+        // Update expense items
+        const expenseIds = Object.keys(pendingChanges.expenses);
+        for (const id of expenseIds) {
+            try {
+                await expensesApi.update(id, pendingChanges.expenses[id]);
+                expensesUpdated++;
+            } catch (error) {
+                console.error('Error updating expense:', error);
+                toast.error(`Failed to update expense item #${id}`);
+            }
+        }
+
+        // Show success message if any updates succeeded
+        if (revenueUpdated > 0 || expensesUpdated > 0) {
+            const successMessage = [
+                revenueUpdated > 0 ? `${revenueUpdated} income items updated` : '',
+                expensesUpdated > 0 ? `${expensesUpdated} expense items updated` : ''
+            ].filter(Boolean).join(' and ');
+
+            toast.success(`${successMessage} successfully!`);
+
+            // Refresh data
+            fetchRevenueData();
+            fetchExpensesData();
+
+            // Clear pending changes
+            setPendingChanges({
+                revenue: {},
+                expenses: {}
+            });
+
+            setIsSnackbarOpen(false);
+            setShowFab(false);
+        }
+    };
+
+    const handleFabClick = () => {
+        setIsSnackbarOpen(true);
     };
 
     const handleQBOImport = async (event) => {
@@ -152,63 +259,107 @@ function Dashboard() {
         }
     };
 
+    // Value to provide through context
+    const contextValue = {
+        addRevenuePendingChange,
+        addExpensePendingChange
+    };
+
     return (
-        <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-                {/* Import QBO button unchanged */}
-                <input
-                    accept=".qbo"
-                    style={{ display: 'none' }}
-                    id="qbo-file"
-                    type="file"
-                    onChange={handleQBOImport}
-                />
-                <label htmlFor="qbo-file">
-                    <Button variant="contained" component="span">
-                        Import QBO
-                    </Button>
-                </label>
-            </Box>
-
-            <Grid container spacing={1} style={{ height: '80vh' }}>
-                {/* Income components remain unchanged */}
-                <Grid item xs={6} style={{ height: '50%' }}>
-                    <Paper style={{ height: '100%', overflow: 'auto' }}>
-                        <IncomeBudget revenueData={revenueData} setRevenueData={setRevenueData} />
-                    </Paper>
-                </Grid>
-                <Grid item xs={6} style={{ height: '50%' }}>
-                    <Paper style={{ height: '100%', overflow: 'auto' }}>
-                        <ActualIncome revenueData={revenueData} setRevenueData={setRevenueData} />
-                    </Paper>
-                </Grid>
-
-                {/* Updated expense components */}
-                <Grid item xs={6} style={{ height: '50%' }}>
-                    <Paper style={{ height: '100%', overflow: 'auto' }}>
-                        <ExpensesBudget
-                            budgetCategories={budgetCategories}
-                            expensesData={expensesData}
-                            setExpensesData={setExpensesData}
-                        />
-                    </Paper>
-                    <ProfitSummary
-                        budgetIncome={calculateTotalBudgetIncome()}
-                        budgetExpenses={calculateTotalBudgetExpenses()}
-                        actualIncome={calculateTotalActualIncome()}
-                        actualExpenses={calculateTotalActualExpenses()}
+        <ChangeContext.Provider value={contextValue}>
+            <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                    <input
+                        accept=".qbo"
+                        style={{ display: 'none' }}
+                        id="qbo-file"
+                        type="file"
+                        onChange={handleQBOImport}
                     />
-                </Grid>
-                <Grid item xs={6} style={{ height: '50%' }}>
-                    <Paper style={{ height: '100%', overflow: 'auto' }}>
-                        <ActualExpenses
-                            expensesData={expensesData}
-                            setExpensesData={setExpensesData}
+                    <label htmlFor="qbo-file">
+                        <Button variant="contained" component="span">
+                            Import QBO
+                        </Button>
+                    </label>
+                </Box>
+
+                <Grid container spacing={1} style={{ height: '80vh' }}>
+                    <Grid item xs={6} style={{ height: '50%' }}>
+                        <Paper style={{ height: '100%', overflow: 'auto' }}>
+                            <IncomeBudget revenueData={revenueData} setRevenueData={setRevenueData} />
+                        </Paper>
+                    </Grid>
+                    <Grid item xs={6} style={{ height: '50%' }}>
+                        <Paper style={{ height: '100%', overflow: 'auto' }}>
+                            <ActualIncome revenueData={revenueData} setRevenueData={setRevenueData} />
+                        </Paper>
+                    </Grid>
+
+                    <Grid item xs={6} style={{ height: '50%' }}>
+                        <Paper style={{ height: '100%', overflow: 'auto' }}>
+                            <ExpensesBudget
+                                budgetCategories={budgetCategories}
+                                expensesData={expensesData}
+                                setExpensesData={setExpensesData}
+                            />
+                        </Paper>
+                        <ProfitSummary
+                            budgetIncome={calculateTotalBudgetIncome()}
+                            budgetExpenses={calculateTotalBudgetExpenses()}
+                            actualIncome={calculateTotalActualIncome()}
+                            actualExpenses={calculateTotalActualExpenses()}
                         />
-                    </Paper>
+                    </Grid>
+                    <Grid item xs={6} style={{ height: '50%' }}>
+                        <Paper style={{ height: '100%', overflow: 'auto' }}>
+                            <ActualExpenses
+                                expensesData={expensesData}
+                                setExpensesData={setExpensesData}
+                            />
+                        </Paper>
+                    </Grid>
                 </Grid>
-            </Grid>
-        </Box>
+
+                {/* Snackbar for unsaved changes */}
+                <Snackbar
+                    open={isSnackbarOpen && hasChanges}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    onClose={() => {
+                        setIsSnackbarOpen(false);
+                        setShowFab(true);
+                    }}
+                    autoHideDuration={null}
+                >
+                    <Alert
+                        action={
+                            <Button color="inherit" size="small" onClick={handleSaveChanges}>
+                                Save
+                            </Button>
+                        }
+                        severity="info"
+                    >
+                        You have unsaved changes.
+                    </Alert>
+                </Snackbar>
+
+                {/* FAB for saving changes */}
+                {showFab && (
+                    <Fab
+                        color="primary"
+                        aria-label="save"
+                        style={{
+                            position: 'fixed',
+                            bottom: 16,
+                            right: 16,
+                            zIndex: 1000
+                        }}
+                        onClick={handleFabClick}
+                    >
+                        <SaveIcon />
+                    </Fab>
+                )}
+            </Box>
+        </ChangeContext.Provider>
     );
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
     Table,
     TableBody,
@@ -15,12 +15,15 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import { toast } from 'react-toastify';
 import { formatDateForInput, formatDateForAPI } from '../utils/dateUtils';
-// Import our API module
 import { revenueApi } from '../api/api';
+import { ChangeContext } from '../pages/Dashboard';
 
 const ActualIncome = ({ revenueData, setRevenueData }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [lastSelectedRow, setLastSelectedRow] = useState(null);
+
+    // Get the change context
+    const { addRevenuePendingChange } = useContext(ChangeContext);
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -82,38 +85,24 @@ const ActualIncome = ({ revenueData, setRevenueData }) => {
         setLastSelectedRow(id);
     };
 
-    const handleAmountChange = async (id, value) => {
-        try {
-            await revenueApi.update(id, {
-                amount: value
-            });
+    const handleAmountChange = (id, value) => {
+        // Update the local state
+        setRevenueData(revenueData.map(revenue =>
+            revenue.id === id ? { ...revenue, amount: value } : revenue
+        ));
 
-            const updatedRevenueData = revenueData.map(revenue =>
-                revenue.id === id ? { ...revenue, amount: value } : revenue
-            );
-            setRevenueData(updatedRevenueData);
-            toast.success('Updated actual amount');
-        } catch (error) {
-            console.error('Error updating actual amount:', error);
-            toast.error('Failed to update actual amount');
-        }
+        // Add to pending changes
+        addRevenuePendingChange(id, { amount: value });
     };
 
-    const handleDateChange = async (id, value) => {
-        try {
-            await revenueApi.update(id, {
-                date: value
-            });
+    const handleDateChange = (id, value) => {
+        // Update the local state
+        setRevenueData(revenueData.map(revenue =>
+            revenue.id === id ? { ...revenue, date: value } : revenue
+        ));
 
-            const updatedRevenueData = revenueData.map(revenue =>
-                revenue.id === id ? { ...revenue, date: value } : revenue
-            );
-            setRevenueData(updatedRevenueData);
-            toast.success('Updated date');
-        } catch (error) {
-            console.error('Error updating date:', error);
-            toast.error('Failed to update date');
-        }
+        // Add to pending changes
+        addRevenuePendingChange(id, { date: value });
     };
 
     const deleteIncome = async (id) => {

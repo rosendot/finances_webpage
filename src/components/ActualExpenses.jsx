@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
     Table,
     TableBody,
@@ -15,12 +15,15 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import { toast } from 'react-toastify';
 import { formatDateForInput, formatDateForAPI } from '../utils/dateUtils';
-// Import our API module
 import { expensesApi } from '../api/api';
+import { ChangeContext } from '../pages/Dashboard';
 
 const ActualExpenses = ({ expensesData, setExpensesData }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [lastSelectedRow, setLastSelectedRow] = useState(null);
+
+    // Get the change context
+    const { addExpensePendingChange } = useContext(ChangeContext);
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -86,52 +89,37 @@ const ActualExpenses = ({ expensesData, setExpensesData }) => {
         setLastSelectedRow(id);
     };
 
-    const handleAmountChange = async (id, value) => {
-        try {
-            const updatedExpense = await expensesApi.update(id, {
-                amount: value
-            });
+    const handleAmountChange = (id, value) => {
+        // Update local state
+        const updatedExpensesData = expensesData.map(expense =>
+            expense.id === id ? { ...expense, amount: value } : expense
+        );
+        setExpensesData(updatedExpensesData);
 
-            const updatedExpensesData = expensesData.map(expense =>
-                expense.id === id ? { ...expense, amount: value } : expense
-            );
-            setExpensesData(updatedExpensesData);
-            toast.success('Updated actual amount');
-        } catch (error) {
-            console.error('Error updating actual amount:', error);
-            toast.error('Failed to update actual amount');
-        }
+        // Add to pending changes
+        addExpensePendingChange(id, { amount: value });
     };
 
-    const handleDateChange = async (id, value) => {
-        try {
-            await expensesApi.update(id, {
-                date: value
-            });
+    const handleDateChange = (id, value) => {
+        // Update local state
+        const updatedExpensesData = expensesData.map(expense =>
+            expense.id === id ? { ...expense, date: value } : expense
+        );
+        setExpensesData(updatedExpensesData);
 
-            const updatedExpensesData = expensesData.map(expense =>
-                expense.id === id ? { ...expense, date: value } : expense
-            );
-            setExpensesData(updatedExpensesData);
-            toast.success('Updated date');
-        } catch (error) {
-            console.error('Error updating date:', error);
-            toast.error('Failed to update date');
-        }
+        // Add to pending changes
+        addExpensePendingChange(id, { date: value });
     };
 
-    const updateExpenseName = async (id, name) => {
-        try {
-            await expensesApi.update(id, { name });
-            const updatedExpensesData = expensesData.map(expense =>
-                expense.id === id ? { ...expense, name } : expense
-            );
-            setExpensesData(updatedExpensesData);
-            toast.success('Updated expense name');
-        } catch (error) {
-            console.error('Error updating expense name:', error);
-            toast.error('Failed to update expense name');
-        }
+    const updateExpenseName = (id, name) => {
+        // Update local state
+        const updatedExpensesData = expensesData.map(expense =>
+            expense.id === id ? { ...expense, name } : expense
+        );
+        setExpensesData(updatedExpensesData);
+
+        // Add to pending changes
+        addExpensePendingChange(id, { name });
     };
 
     const addNewExpense = async () => {

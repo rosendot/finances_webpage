@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
     Table,
     TableBody,
@@ -13,9 +13,13 @@ import {
 } from '@mui/material';
 import { toast } from 'react-toastify';
 import { expensesApi } from '../api/api';
+import { ChangeContext } from '../pages/Dashboard';
 
 const ExpensesBudget = ({ budgetCategories, expensesData, setExpensesData }) => {
     const [selectedCategories, setSelectedCategories] = useState(new Set());
+
+    // Get the change context
+    const { addExpensePendingChange } = useContext(ChangeContext);
 
     const handleCategoryClick = (category) => {
         setSelectedCategories(prev => {
@@ -30,14 +34,14 @@ const ExpensesBudget = ({ budgetCategories, expensesData, setExpensesData }) => 
     };
 
     const handleExpectedAmountChange = async (categoryName, value) => {
-        try {
-            // Get all expenses in this category
-            const categoryExpenses = expensesData.filter(exp =>
-                (exp.category || 'Miscellaneous') === categoryName
-            );
+        // Get all expenses in this category
+        const categoryExpenses = expensesData.filter(exp =>
+            (exp.category || 'Miscellaneous') === categoryName
+        );
 
-            if (categoryExpenses.length === 0) {
-                // If there are no expenses in this category yet, create a default one
+        if (categoryExpenses.length === 0) {
+            // If there are no expenses in this category yet, create a default one
+            try {
                 const newExpense = {
                     name: `${categoryName} Budget`,
                     amount: 0,
@@ -48,59 +52,49 @@ const ExpensesBudget = ({ budgetCategories, expensesData, setExpensesData }) => 
                 const response = await expensesApi.create(newExpense);
                 setExpensesData([...expensesData, response]);
                 toast.success(`Created new budget for ${categoryName}`);
-                return;
+            } catch (error) {
+                console.error('Error creating budget category:', error);
+                toast.error(`Failed to create budget for ${categoryName}`);
+            }
+            return;
+        }
+
+        // Calculate how to distribute the new budget
+        const currentTotal = categoryExpenses.reduce(
+            (sum, exp) => sum + parseFloat(exp.expected_amount || 0),
+            0
+        );
+
+        // Update local state with new expected amounts
+        const updatedExpensesData = [...expensesData];
+
+        categoryExpenses.forEach(expense => {
+            let newAmount;
+
+            if (currentTotal <= 0) {
+                // Divide evenly if current total is 0
+                newAmount = value / categoryExpenses.length;
+            } else {
+                // Distribute proportionally based on current expected amounts
+                const proportion = (parseFloat(expense.expected_amount || 0) / currentTotal) || 0;
+                newAmount = value * proportion;
             }
 
-            // Calculate how to distribute the new budget
-            const currentTotal = categoryExpenses.reduce(
-                (sum, exp) => sum + parseFloat(exp.expected_amount || 0),
-                0
-            );
-
-            // If current total is 0, divide evenly. Otherwise, distribute proportionally.
-            const updatePromises = categoryExpenses.map(expense => {
-                let newAmount;
-
-                if (currentTotal <= 0) {
-                    // Divide evenly if current total is 0
-                    newAmount = value / categoryExpenses.length;
-                } else {
-                    // Distribute proportionally based on current expected amounts
-                    const proportion = (parseFloat(expense.expected_amount || 0) / currentTotal) || 0;
-                    newAmount = value * proportion;
-                }
-
-                // Update the API
-                return expensesApi.update(expense.id, {
+            // Find and update the expense in the copied array
+            const index = updatedExpensesData.findIndex(e => e.id === expense.id);
+            if (index !== -1) {
+                updatedExpensesData[index] = {
+                    ...updatedExpensesData[index],
                     expected_amount: newAmount
-                });
-            });
+                };
 
-            await Promise.all(updatePromises);
+                // Add to pending changes
+                addExpensePendingChange(expense.id, { expected_amount: newAmount });
+            }
+        });
 
-            // Update local state
-            const updatedExpensesData = expensesData.map(expense => {
-                if ((expense.category || 'Miscellaneous') === categoryName) {
-                    let newAmount;
-
-                    if (currentTotal <= 0) {
-                        newAmount = value / categoryExpenses.length;
-                    } else {
-                        const proportion = (parseFloat(expense.expected_amount || 0) / currentTotal) || 0;
-                        newAmount = value * proportion;
-                    }
-
-                    return { ...expense, expected_amount: newAmount };
-                }
-                return expense;
-            });
-
-            setExpensesData(updatedExpensesData);
-            toast.success(`Updated budget for ${categoryName}`);
-        } catch (error) {
-            console.error('Error updating expected amount:', error);
-            toast.error('Failed to update expected amount');
-        }
+        // Update the state with the new array
+        setExpensesData(updatedExpensesData);
     };
 
     const addNewCategory = async () => {
