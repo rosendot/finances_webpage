@@ -73,7 +73,11 @@ function Dashboard() {
                     const qboData = e.target.result;
                     const processedData = processQBO(qboData);
 
-                    toast.info(`Processing ${processedData.income.length + processedData.expenses.length} transactions...`);
+                    toast.info(`Processing ${processedData.income.length} income and ${processedData.expenses.length} expense transactions...`);
+
+                    if (processedData.transfers.length > 0) {
+                        toast.info(`Note: ${processedData.transfers.length} internal transfers (credit card payments) were detected and excluded.`);
+                    }
 
                     // Process the income items
                     if (processedData.income.length > 0) {
