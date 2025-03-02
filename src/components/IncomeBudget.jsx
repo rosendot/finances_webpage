@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import {
     Table,
     TableBody,
@@ -13,6 +13,7 @@ import {
     IconButton,
     Box
 } from '@mui/material';
+import { FixedSizeList as List } from 'react-window';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { toast } from 'react-toastify';
 import { formatDateForInput, formatDateForAPI } from '../utils/dateUtils';
@@ -22,9 +23,45 @@ import { ChangeContext } from '../pages/Dashboard';
 const IncomeBudget = ({ revenueData, setRevenueData }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [lastSelectedRow, setLastSelectedRow] = useState(null);
+    const [flatRevenueList, setFlatRevenueList] = useState([]);
+    const tableContainerRef = useRef(null);
+    const [containerHeight, setContainerHeight] = useState(300); // Default height
 
     // Get the change context
     const { addRevenuePendingChange } = useContext(ChangeContext);
+
+    // Prepare flat list for virtualization
+    useEffect(() => {
+        // Create the flat list of revenue items for budget
+        const flatList = [];
+
+        // Add all revenue rows
+        revenueData.forEach(revenue => {
+            flatList.push({
+                type: 'revenue',
+                data: revenue
+            });
+        });
+
+        // Add a grand total row
+        const grandTotal = revenueData.reduce((total, revenue) =>
+            total + parseFloat(revenue.expected_amount || 0), 0);
+
+        flatList.push({
+            type: 'grandTotal',
+            total: grandTotal
+        });
+
+        setFlatRevenueList(flatList);
+    }, [revenueData]);
+
+    // Measure the container height
+    useEffect(() => {
+        if (tableContainerRef.current) {
+            const height = tableContainerRef.current.clientHeight - 56; // Subtract header height
+            setContainerHeight(height > 100 ? height : 300); // Set a minimum height
+        }
+    }, [tableContainerRef]);
 
     const handleRowClick = (id, event) => {
         if (event.shiftKey && lastSelectedRow !== null) {
@@ -142,12 +179,87 @@ const IncomeBudget = ({ revenueData, setRevenueData }) => {
         addRevenuePendingChange(id, { name });
     };
 
-    const calculateTotal = () => {
-        return revenueData.reduce((total, revenue) => total + parseFloat(revenue.expected_amount || 0), 0);
+    // Render a row based on its type and data
+    const renderRow = ({ index, style }) => {
+        const item = flatRevenueList[index];
+
+        if (item.type === 'revenue') {
+            const revenue = item.data;
+            return (
+                <div style={style}>
+                    <TableRow
+                        onClick={(event) => handleRowClick(revenue.id, event)}
+                        sx={{
+                            cursor: 'pointer',
+                            backgroundColor: selectedRows.has(revenue.id) ? '#8a8a8a' : 'inherit',
+                            '&:hover': {
+                                backgroundColor: '#55c9c2',
+                            },
+                            display: 'flex',
+                            width: '100%'
+                        }}
+                    >
+                        <TableCell sx={{ flex: 2 }}>
+                            <TextField
+                                value={revenue.name}
+                                onChange={(e) => {
+                                    e.stopPropagation();
+                                    updateIncomeName(revenue.id, e.target.value);
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                variant="standard"
+                                fullWidth
+                            />
+                        </TableCell>
+                        <TableCell sx={{ flex: 1 }}>
+                            <TextField
+                                type="number"
+                                value={revenue.expected_amount || ''}
+                                onChange={(e) => {
+                                    e.stopPropagation();
+                                    handleExpectedAmountChange(revenue.id, e.target.value);
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                variant="standard"
+                                InputProps={{
+                                    startAdornment: '$'
+                                }}
+                                fullWidth
+                            />
+                        </TableCell>
+                        <TableCell sx={{ flex: 0.5 }}>
+                            <IconButton
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteIncome(revenue.id);
+                                }}
+                                color="error"
+                                size="small"
+                            >
+                                <DeleteIcon />
+                            </IconButton>
+                        </TableCell>
+                    </TableRow>
+                </div>
+            );
+        } else if (item.type === 'grandTotal') {
+            return (
+                <div style={style}>
+                    <TableRow sx={{ backgroundColor: 'inherit', display: 'flex', width: '100%' }}>
+                        <TableCell sx={{ flex: 2 }}><strong>Total</strong></TableCell>
+                        <TableCell sx={{ flex: 1.5 }} colSpan={2}>
+                            <strong>${item.total.toFixed(2)}</strong>
+                        </TableCell>
+                    </TableRow>
+                </div>
+            );
+        }
+
+        return null;
     };
 
     return (
-        <div style={{ padding: '20px' }}>
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 2 }}>
                 <Typography variant="h6">Income Budget</Typography>
                 {revenueData.length > 0 && (
@@ -183,77 +295,34 @@ const IncomeBudget = ({ revenueData, setRevenueData }) => {
                     Delete Selected
                 </Button>
             </Box>
-            <TableContainer>
+
+            <TableContainer
+                ref={tableContainerRef}
+                component={Paper}
+                sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+            >
                 <Table>
                     <TableHead>
-                        <TableRow>
-                            <TableCell>Name</TableCell>
-                            <TableCell>Expected Amount</TableCell>
-                            <TableCell>Actions</TableCell>
+                        <TableRow sx={{ display: 'flex', width: '100%' }}>
+                            <TableCell sx={{ flex: 2 }}>Name</TableCell>
+                            <TableCell sx={{ flex: 1 }}>Expected Amount</TableCell>
+                            <TableCell sx={{ flex: 0.5 }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
-                    <TableBody>
-                        {revenueData.map((revenue) => (
-                            <TableRow
-                                key={revenue.id}
-                                onClick={(event) => handleRowClick(revenue.id, event)}
-                                sx={{
-                                    cursor: 'pointer',
-                                    backgroundColor: selectedRows.has(revenue.id) ? '#8a8a8a' : 'inherit',
-                                    '&:hover': {
-                                        backgroundColor: '#55c9c2',
-                                    },
-                                }}
-                            >
-                                <TableCell>
-                                    <TextField
-                                        value={revenue.name}
-                                        onChange={(e) => {
-                                            e.stopPropagation();
-                                            updateIncomeName(revenue.id, e.target.value);
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        variant="standard"
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <TextField
-                                        type="number"
-                                        value={revenue.expected_amount || ''}
-                                        onChange={(e) => {
-                                            e.stopPropagation();
-                                            handleExpectedAmountChange(revenue.id, e.target.value);
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        variant="standard"
-                                        InputProps={{
-                                            startAdornment: '$'
-                                        }}
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <IconButton
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            deleteIncome(revenue.id);
-                                        }}
-                                        color="error"
-                                        size="small"
-                                    >
-                                        <DeleteIcon />
-                                    </IconButton>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        <TableRow>
-                            <TableCell><strong>Total</strong></TableCell>
-                            <TableCell colSpan={2}>
-                                <strong>${calculateTotal().toFixed(2)}</strong>
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
                 </Table>
+
+                <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                    <List
+                        height={containerHeight}
+                        itemCount={flatRevenueList.length}
+                        itemSize={60} // Adjust row height as needed
+                        width="100%"
+                    >
+                        {renderRow}
+                    </List>
+                </Box>
             </TableContainer>
+
             <Button
                 variant="contained"
                 color="primary"
