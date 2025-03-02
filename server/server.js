@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// API endpoint for revenue data
+// GET /api/revenue - Retrieves all revenue records from the database
 app.get('/api/revenue', async (req, res) => {
     try {
         const { rows: revenueData } = await pool.query('SELECT * FROM revenue');
@@ -17,7 +17,8 @@ app.get('/api/revenue', async (req, res) => {
     }
 });
 
-// In server.js
+// PUT /api/revenue/:id - Updates a specific revenue record by ID
+// Allows partial updates with name and/or expected_amount
 app.put('/api/revenue/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -39,7 +40,7 @@ app.put('/api/revenue/:id', async (req, res) => {
     }
 });
 
-// API endpoint for expenses data
+// GET /api/expenses - Retrieves all expense records from the database
 app.get('/api/expenses', async (req, res) => {
     try {
         const { rows: expensesData } = await pool.query('SELECT * FROM expenses');
@@ -50,7 +51,8 @@ app.get('/api/expenses', async (req, res) => {
     }
 });
 
-// In server.js
+// PUT /api/expenses/:id - Updates a specific expense record by ID
+// Allows partial updates with name, expected_amount, and/or category
 app.put('/api/expenses/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -72,7 +74,8 @@ app.put('/api/expenses/:id', async (req, res) => {
     }
 });
 
-// POST endpoint for revenue
+// POST /api/revenue - Creates a new revenue record
+// Sets default values for many fields
 app.post('/api/revenue', async (req, res) => {
     try {
         const { name, amount, date, is_recurring, category, payment_method, notes } = req.body;
@@ -116,7 +119,8 @@ app.post('/api/revenue', async (req, res) => {
     }
 });
 
-// POST endpoint for expenses
+// POST /api/expenses - Creates a new expense record
+// Sets default values for many fields
 app.post('/api/expenses', async (req, res) => {
     try {
         const { name, amount, date, is_recurring, category, merchant, notes, payment_method } = req.body;
@@ -161,7 +165,8 @@ app.post('/api/expenses', async (req, res) => {
     }
 });
 
-// Put the bulk delete routes BEFORE the individual delete routes
+// DELETE /api/revenue/bulk - Deletes multiple revenue records in one operation
+// Takes an array of IDs in the request body
 app.delete('/api/revenue/bulk', async (req, res) => {
     try {
         const { ids } = req.body;
@@ -186,6 +191,8 @@ app.delete('/api/revenue/bulk', async (req, res) => {
     }
 });
 
+// DELETE /api/expenses/bulk - Deletes multiple expense records in one operation
+// Takes an array of IDs in the request body
 app.delete('/api/expenses/bulk', async (req, res) => {
     try {
         const { ids } = req.body;
@@ -210,7 +217,7 @@ app.delete('/api/expenses/bulk', async (req, res) => {
     }
 });
 
-// Then put the individual delete routes AFTER
+// DELETE /api/revenue/:id - Deletes a single revenue record by ID
 app.delete('/api/revenue/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -222,6 +229,7 @@ app.delete('/api/revenue/:id', async (req, res) => {
     }
 });
 
+// DELETE /api/expenses/:id - Deletes a single expense record by ID
 app.delete('/api/expenses/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -233,7 +241,8 @@ app.delete('/api/expenses/:id', async (req, res) => {
     }
 });
 
-// Add these new endpoints to server.js
+// POST /api/revenue/bulk - Creates multiple revenue records in one transaction
+// Takes an array of revenue items in the request body
 app.post('/api/revenue/bulk', async (req, res) => {
     try {
         const { items } = req.body;
@@ -303,6 +312,8 @@ app.post('/api/revenue/bulk', async (req, res) => {
     }
 });
 
+// POST /api/expenses/bulk - Creates multiple expense records in one transaction
+// Takes an array of expense items in the request body
 app.post('/api/expenses/bulk', async (req, res) => {
     try {
         const { items } = req.body;
@@ -373,7 +384,7 @@ app.post('/api/expenses/bulk', async (req, res) => {
     }
 });
 
-// Start the server
+// Start the server on the specified port or default to 5000
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
