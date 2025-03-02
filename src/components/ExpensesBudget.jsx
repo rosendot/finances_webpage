@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import {
     Table,
     TableBody,
@@ -9,17 +9,62 @@ import {
     TextField,
     Typography,
     Button,
-    Box
+    Box,
+    Paper
 } from '@mui/material';
+import { FixedSizeList as List } from 'react-window';
 import { toast } from 'react-toastify';
 import { expensesApi } from '../api/api';
 import { ChangeContext } from '../pages/Dashboard';
 
 const ExpensesBudget = ({ budgetCategories, expensesData, setExpensesData }) => {
     const [selectedCategories, setSelectedCategories] = useState(new Set());
+    const [flatCategoriesList, setFlatCategoriesList] = useState([]);
+    const tableContainerRef = useRef(null);
+    const [containerHeight, setContainerHeight] = useState(300); // Default height
 
     // Get the change context
     const { addExpensePendingChange } = useContext(ChangeContext);
+
+    // Prepare flat list for virtualization
+    useEffect(() => {
+        // Create a flat list of budget categories
+        const flatList = [];
+
+        // Add all category rows
+        budgetCategories.forEach(category => {
+            flatList.push({
+                type: 'category',
+                data: category
+            });
+        });
+
+        // Add the totals row
+        const totalExpected = budgetCategories.reduce(
+            (total, category) => total + parseFloat(category.expected_amount || 0),
+            0
+        );
+        const totalActual = budgetCategories.reduce(
+            (total, category) => total + parseFloat(category.actual_amount || 0),
+            0
+        );
+
+        flatList.push({
+            type: 'totals',
+            expectedTotal: totalExpected,
+            actualTotal: totalActual
+        });
+
+        setFlatCategoriesList(flatList);
+    }, [budgetCategories]);
+
+    // Measure the container height
+    useEffect(() => {
+        if (tableContainerRef.current) {
+            const height = tableContainerRef.current.clientHeight - 56; // Subtract header height
+            setContainerHeight(height > 100 ? height : 300); // Set a minimum height
+        }
+    }, [tableContainerRef]);
 
     const handleCategoryClick = (category) => {
         setSelectedCategories(prev => {
@@ -116,114 +161,138 @@ const ExpensesBudget = ({ budgetCategories, expensesData, setExpensesData }) => 
         }
     };
 
-    const calculateTotal = () => {
-        return budgetCategories.reduce(
-            (total, category) => total + parseFloat(category.expected_amount || 0),
-            0
-        );
-    };
+    // Render a row based on its type and data
+    const renderRow = ({ index, style }) => {
+        const item = flatCategoriesList[index];
 
-    const calculateActualTotal = () => {
-        return budgetCategories.reduce(
-            (total, category) => total + parseFloat(category.actual_amount || 0),
-            0
-        );
+        if (item.type === 'category') {
+            const category = item.data;
+            const isOverBudget = category.actual_amount > category.expected_amount;
+            const variance = category.actual_amount - category.expected_amount;
+
+            return (
+                <div style={style}>
+                    <TableRow
+                        onClick={() => handleCategoryClick(category.name)}
+                        sx={{
+                            cursor: 'pointer',
+                            backgroundColor: selectedCategories.has(category.name)
+                                ? '#8a8a8a'
+                                : 'inherit',
+                            '&:hover': {
+                                backgroundColor: '#55c9c2',
+                            },
+                            display: 'flex',
+                            width: '100%'
+                        }}
+                    >
+                        <TableCell sx={{ flex: 2 }}>{category.name}</TableCell>
+                        <TableCell sx={{ flex: 1 }}>
+                            <TextField
+                                type="number"
+                                value={category.expected_amount || ''}
+                                onChange={(e) => {
+                                    e.stopPropagation();
+                                    handleExpectedAmountChange(
+                                        category.name,
+                                        parseFloat(e.target.value || 0)
+                                    );
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                variant="standard"
+                                InputProps={{
+                                    startAdornment: '$'
+                                }}
+                                fullWidth
+                            />
+                        </TableCell>
+                        <TableCell
+                            sx={{
+                                flex: 1,
+                                color: isOverBudget ? 'error.main' : 'success.main',
+                            }}
+                        >
+                            ${category.actual_amount.toFixed(2)}
+                        </TableCell>
+                        <TableCell
+                            sx={{
+                                flex: 1,
+                                color: variance > 0 ? 'error.main' : 'success.main',
+                            }}
+                        >
+                            {variance > 0 ? '+' : ''}${variance.toFixed(2)}
+                        </TableCell>
+                    </TableRow>
+                </div>
+            );
+        } else if (item.type === 'totals') {
+            const variance = item.actualTotal - item.expectedTotal;
+
+            return (
+                <div style={style}>
+                    <TableRow sx={{ backgroundColor: 'inherit', display: 'flex', width: '100%' }}>
+                        <TableCell sx={{ flex: 2 }}><strong>Total</strong></TableCell>
+                        <TableCell sx={{ flex: 1 }}>
+                            <strong>${item.expectedTotal.toFixed(2)}</strong>
+                        </TableCell>
+                        <TableCell
+                            sx={{
+                                flex: 1,
+                                color: item.actualTotal > item.expectedTotal ? 'error.main' : 'success.main',
+                            }}
+                        >
+                            <strong>${item.actualTotal.toFixed(2)}</strong>
+                        </TableCell>
+                        <TableCell
+                            sx={{
+                                flex: 1,
+                                color: variance > 0 ? 'error.main' : 'success.main',
+                            }}
+                        >
+                            <strong>
+                                {variance > 0 ? '+' : ''}${variance.toFixed(2)}
+                            </strong>
+                        </TableCell>
+                    </TableRow>
+                </div>
+            );
+        }
+
+        return null;
     };
 
     return (
-        <div style={{ padding: '20px' }}>
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 2 }}>
                 <Typography variant="h6">Expenses Budget</Typography>
             </Box>
 
-            <TableContainer>
+            <TableContainer
+                ref={tableContainerRef}
+                component={Paper}
+                sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+            >
                 <Table>
                     <TableHead>
-                        <TableRow>
-                            <TableCell>Category</TableCell>
-                            <TableCell>Expected Amount</TableCell>
-                            <TableCell>Actual Amount</TableCell>
-                            <TableCell>Variance</TableCell>
+                        <TableRow sx={{ display: 'flex', width: '100%' }}>
+                            <TableCell sx={{ flex: 2 }}>Category</TableCell>
+                            <TableCell sx={{ flex: 1 }}>Expected Amount</TableCell>
+                            <TableCell sx={{ flex: 1 }}>Actual Amount</TableCell>
+                            <TableCell sx={{ flex: 1 }}>Variance</TableCell>
                         </TableRow>
                     </TableHead>
-                    <TableBody>
-                        {budgetCategories.map((category) => {
-                            const isOverBudget = category.actual_amount > category.expected_amount;
-                            const variance = category.actual_amount - category.expected_amount;
-
-                            return (
-                                <TableRow
-                                    key={category.name}
-                                    onClick={() => handleCategoryClick(category.name)}
-                                    sx={{
-                                        cursor: 'pointer',
-                                        backgroundColor: selectedCategories.has(category.name)
-                                            ? '#8a8a8a'
-                                            : 'inherit',
-                                        '&:hover': {
-                                            backgroundColor: '#55c9c2',
-                                        },
-                                    }}
-                                >
-                                    <TableCell>{category.name}</TableCell>
-                                    <TableCell>
-                                        <TextField
-                                            type="number"
-                                            value={category.expected_amount || ''}
-                                            onChange={(e) => {
-                                                e.stopPropagation();
-                                                handleExpectedAmountChange(
-                                                    category.name,
-                                                    parseFloat(e.target.value || 0)
-                                                );
-                                            }}
-                                            onClick={(e) => e.stopPropagation()}
-                                            variant="standard"
-                                            InputProps={{
-                                                startAdornment: '$'
-                                            }}
-                                        />
-                                    </TableCell>
-                                    <TableCell
-                                        sx={{
-                                            color: isOverBudget ? 'error.main' : 'success.main',
-                                        }}
-                                    >
-                                        ${category.actual_amount.toFixed(2)}
-                                    </TableCell>
-                                    <TableCell
-                                        sx={{
-                                            color: variance > 0 ? 'error.main' : 'success.main',
-                                        }}
-                                    >
-                                        {variance > 0 ? '+' : ''}${variance.toFixed(2)}
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })}
-                        <TableRow sx={{ backgroundColor: 'inherit' }}>
-                            <TableCell><strong>Total</strong></TableCell>
-                            <TableCell><strong>${calculateTotal().toFixed(2)}</strong></TableCell>
-                            <TableCell
-                                sx={{
-                                    color: calculateActualTotal() > calculateTotal() ? 'error.main' : 'success.main',
-                                }}
-                            >
-                                <strong>${calculateActualTotal().toFixed(2)}</strong>
-                            </TableCell>
-                            <TableCell
-                                sx={{
-                                    color: calculateActualTotal() - calculateTotal() > 0 ? 'error.main' : 'success.main',
-                                }}
-                            >
-                                <strong>
-                                    {calculateActualTotal() - calculateTotal() > 0 ? '+' : ''}
-                                    ${(calculateActualTotal() - calculateTotal()).toFixed(2)}
-                                </strong>
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
                 </Table>
+
+                <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                    <List
+                        height={containerHeight}
+                        itemCount={flatCategoriesList.length}
+                        itemSize={60} // Adjust row height as needed
+                        width="100%"
+                    >
+                        {renderRow}
+                    </List>
+                </Box>
             </TableContainer>
 
             <Button
