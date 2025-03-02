@@ -5,10 +5,11 @@ import ActualIncome from '../components/ActualIncome';
 import ExpensesBudget from '../components/ExpensesBudget';
 import ActualExpenses from '../components/ActualExpenses';
 import ProfitSummary from '../components/ProfitSummary';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import { processCSV } from '../utils/csvProcessor';
 import { formatDateForAPI } from '../utils/dateUtils';
+// Import our API modules
+import { revenueApi, expensesApi } from '../api/api';
 
 function Dashboard() {
     const [revenueData, setRevenueData] = useState([]);
@@ -21,9 +22,9 @@ function Dashboard() {
 
     const fetchRevenueData = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/revenue');
-            console.log('revenue data:', response.data);
-            setRevenueData(response.data);
+            const data = await revenueApi.getAll();
+            console.log('revenue data:', data);
+            setRevenueData(data);
         } catch (error) {
             console.error('Error fetching revenue data:', error);
             toast.error('Failed to fetch revenue data');
@@ -32,9 +33,9 @@ function Dashboard() {
 
     const fetchExpensesData = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/expenses');
-            console.log('expenses data:', response.data);
-            setExpensesData(response.data);
+            const data = await expensesApi.getAll();
+            console.log('expenses data:', data);
+            setExpensesData(data);
         } catch (error) {
             console.error('Error fetching expenses data:', error);
             toast.error('Failed to fetch expenses data');
@@ -80,13 +81,11 @@ function Dashboard() {
                         }));
 
                         toast.info(`Importing ${incomeItems.length} income transactions...`);
-                        const incomeResponse = await axios.post('http://localhost:5000/api/revenue/bulk', {
-                            items: incomeItems
-                        });
+                        const newIncomeItems = await revenueApi.bulkCreate(incomeItems);
 
                         // Update revenue data with new items
-                        setRevenueData(prevData => [...prevData, ...incomeResponse.data]);
-                        toast.success(`Successfully imported ${incomeResponse.data.length} income transactions`);
+                        setRevenueData(prevData => [...prevData, ...newIncomeItems]);
+                        toast.success(`Successfully imported ${newIncomeItems.length} income transactions`);
                     }
 
                     // Bulk import expense items
@@ -101,13 +100,11 @@ function Dashboard() {
                         }));
 
                         toast.info(`Importing ${expenseItems.length} expense transactions...`);
-                        const expenseResponse = await axios.post('http://localhost:5000/api/expenses/bulk', {
-                            items: expenseItems
-                        });
+                        const newExpenseItems = await expensesApi.bulkCreate(expenseItems);
 
                         // Update expenses data with new items
-                        setExpensesData(prevData => [...prevData, ...expenseResponse.data]);
-                        toast.success(`Successfully imported ${expenseResponse.data.length} expense transactions`);
+                        setExpensesData(prevData => [...prevData, ...newExpenseItems]);
+                        toast.success(`Successfully imported ${newExpenseItems.length} expense transactions`);
                     }
 
                     toast.success('CSV import completed successfully!');
@@ -165,7 +162,7 @@ function Dashboard() {
                     </Paper>
                 </Grid>
             </Grid>
-        </Box >
+        </Box>
     );
 }
 

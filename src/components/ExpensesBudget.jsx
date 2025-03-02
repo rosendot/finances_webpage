@@ -13,9 +13,10 @@ import {
     Box
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import { formatDateForInput, formatDateForAPI } from '../utils/dateUtils';
+// Import our API module
+import { expensesApi } from '../api/api';
 
 const ExpensesBudget = ({ expensesData, setExpensesData }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
@@ -70,7 +71,7 @@ const ExpensesBudget = ({ expensesData, setExpensesData }) => {
 
     const handleExpectedAmountChange = async (id, value) => {
         try {
-            await axios.put(`http://localhost:5000/api/expenses/${id}`, {
+            await expensesApi.update(id, {
                 expected_amount: value
             });
 
@@ -96,8 +97,8 @@ const ExpensesBudget = ({ expensesData, setExpensesData }) => {
                 is_recurring: false
             };
 
-            const response = await axios.post('http://localhost:5000/api/expenses', newExpense);
-            setExpensesData([...expensesData, response.data]);
+            const response = await expensesApi.create(newExpense);
+            setExpensesData([...expensesData, response]);
             toast.success('Added new expense');
         } catch (error) {
             console.error('Error adding new expense:', error);
@@ -107,7 +108,7 @@ const ExpensesBudget = ({ expensesData, setExpensesData }) => {
 
     const deleteExpense = async (id) => {
         try {
-            await axios.delete(`http://localhost:5000/api/expenses/${id}`);
+            await expensesApi.delete(id);
             setExpensesData(expensesData.filter(expense => expense.id !== id));
             setSelectedRows(prev => {
                 const newSelected = new Set(prev);
@@ -124,9 +125,7 @@ const ExpensesBudget = ({ expensesData, setExpensesData }) => {
     const deleteSelectedExpenses = async () => {
         try {
             const selectedIds = Array.from(selectedRows);
-            await axios.delete('http://localhost:5000/api/expenses/bulk', {
-                data: { ids: selectedIds }
-            });
+            await expensesApi.bulkDelete(selectedIds);
 
             setExpensesData(expensesData.filter(expense => !selectedRows.has(expense.id)));
             setSelectedRows(new Set());
@@ -139,7 +138,7 @@ const ExpensesBudget = ({ expensesData, setExpensesData }) => {
 
     const updateExpenseDetails = async (id, field, value) => {
         try {
-            await axios.put(`http://localhost:5000/api/expenses/${id}`, { [field]: value });
+            await expensesApi.update(id, { [field]: value });
             const updatedExpensesData = expensesData.map(expense =>
                 expense.id === id ? { ...expense, [field]: value } : expense
             );

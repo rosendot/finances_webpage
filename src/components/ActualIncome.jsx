@@ -13,9 +13,10 @@ import {
     Button
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import { formatDateForInput, formatDateForAPI } from '../utils/dateUtils';
+// Import our API module
+import { revenueApi } from '../api/api';
 
 const ActualIncome = ({ revenueData, setRevenueData }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
@@ -83,7 +84,7 @@ const ActualIncome = ({ revenueData, setRevenueData }) => {
 
     const handleAmountChange = async (id, value) => {
         try {
-            await axios.put(`http://localhost:5000/api/revenue/${id}`, {
+            await revenueApi.update(id, {
                 amount: value
             });
 
@@ -100,7 +101,7 @@ const ActualIncome = ({ revenueData, setRevenueData }) => {
 
     const handleDateChange = async (id, value) => {
         try {
-            await axios.put(`http://localhost:5000/api/revenue/${id}`, {
+            await revenueApi.update(id, {
                 date: value
             });
 
@@ -117,7 +118,7 @@ const ActualIncome = ({ revenueData, setRevenueData }) => {
 
     const deleteIncome = async (id) => {
         try {
-            await axios.delete(`http://localhost:5000/api/revenue/${id}`);
+            await revenueApi.delete(id);
             setRevenueData(revenueData.filter(revenue => revenue.id !== id));
             setSelectedRows(prev => {
                 const newSelected = new Set(prev);
@@ -134,9 +135,7 @@ const ActualIncome = ({ revenueData, setRevenueData }) => {
     const deleteSelectedIncomes = async () => {
         try {
             const selectedIds = Array.from(selectedRows);
-            await axios.delete('http://localhost:5000/api/revenue/bulk', {
-                data: { ids: selectedIds }
-            });
+            await revenueApi.bulkDelete(selectedIds);
 
             setRevenueData(revenueData.filter(revenue => !selectedRows.has(revenue.id)));
             setSelectedRows(new Set());

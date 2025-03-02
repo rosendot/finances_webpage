@@ -14,9 +14,10 @@ import {
     Box
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import { formatDateForInput, formatDateForAPI } from '../utils/dateUtils';
+// Import our API module
+import { revenueApi } from '../api/api';
 
 const IncomeBudget = ({ revenueData, setRevenueData }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
@@ -71,7 +72,7 @@ const IncomeBudget = ({ revenueData, setRevenueData }) => {
 
     const handleExpectedAmountChange = async (id, value) => {
         try {
-            await axios.put(`http://localhost:5000/api/revenue/${id}`, {
+            await revenueApi.update(id, {
                 expected_amount: value
             });
 
@@ -96,8 +97,8 @@ const IncomeBudget = ({ revenueData, setRevenueData }) => {
                 is_recurring: false
             };
 
-            const response = await axios.post('http://localhost:5000/api/revenue', newIncome);
-            setRevenueData([...revenueData, response.data]);
+            const response = await revenueApi.create(newIncome);
+            setRevenueData([...revenueData, response]);
             toast.success('Added new income source');
         } catch (error) {
             console.error('Error adding new income:', error);
@@ -107,7 +108,7 @@ const IncomeBudget = ({ revenueData, setRevenueData }) => {
 
     const deleteIncome = async (id) => {
         try {
-            await axios.delete(`http://localhost:5000/api/revenue/${id}`);
+            await revenueApi.delete(id);
             setRevenueData(revenueData.filter(revenue => revenue.id !== id));
             setSelectedRows(prev => {
                 const newSelected = new Set(prev);
@@ -124,9 +125,7 @@ const IncomeBudget = ({ revenueData, setRevenueData }) => {
     const deleteSelectedIncomes = async () => {
         try {
             const selectedIds = Array.from(selectedRows);
-            await axios.delete('http://localhost:5000/api/revenue/bulk', {
-                data: { ids: selectedIds }
-            });
+            await revenueApi.bulkDelete(selectedIds);
 
             setRevenueData(revenueData.filter(revenue => !selectedRows.has(revenue.id)));
             setSelectedRows(new Set());
@@ -139,7 +138,7 @@ const IncomeBudget = ({ revenueData, setRevenueData }) => {
 
     const updateIncomeName = async (id, name) => {
         try {
-            await axios.put(`http://localhost:5000/api/revenue/${id}`, { name });
+            await revenueApi.update(id, { name });
             const updatedRevenueData = revenueData.map(revenue =>
                 revenue.id === id ? { ...revenue, name } : revenue
             );

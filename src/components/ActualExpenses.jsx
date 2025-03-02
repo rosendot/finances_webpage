@@ -13,9 +13,10 @@ import {
     Box
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import { formatDateForInput, formatDateForAPI } from '../utils/dateUtils';
+// Import our API module
+import { expensesApi } from '../api/api';
 
 const ActualExpenses = ({ expensesData, setExpensesData }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
@@ -87,7 +88,7 @@ const ActualExpenses = ({ expensesData, setExpensesData }) => {
 
     const handleAmountChange = async (id, value) => {
         try {
-            await axios.put(`http://localhost:5000/api/expenses/${id}`, {
+            const updatedExpense = await expensesApi.update(id, {
                 amount: value
             });
 
@@ -104,7 +105,7 @@ const ActualExpenses = ({ expensesData, setExpensesData }) => {
 
     const handleDateChange = async (id, value) => {
         try {
-            await axios.put(`http://localhost:5000/api/expenses/${id}`, {
+            await expensesApi.update(id, {
                 date: value
             });
 
@@ -121,7 +122,7 @@ const ActualExpenses = ({ expensesData, setExpensesData }) => {
 
     const updateExpenseName = async (id, name) => {
         try {
-            await axios.put(`http://localhost:5000/api/expenses/${id}`, { name });
+            await expensesApi.update(id, { name });
             const updatedExpensesData = expensesData.map(expense =>
                 expense.id === id ? { ...expense, name } : expense
             );
@@ -143,8 +144,8 @@ const ActualExpenses = ({ expensesData, setExpensesData }) => {
                 category: 'Miscellaneous'
             };
 
-            const response = await axios.post('http://localhost:5000/api/expenses', newExpense);
-            setExpensesData([...expensesData, response.data]);
+            const response = await expensesApi.create(newExpense);
+            setExpensesData([...expensesData, response]);
             toast.success('Added new expense');
         } catch (error) {
             console.error('Error adding new expense:', error);
@@ -154,7 +155,7 @@ const ActualExpenses = ({ expensesData, setExpensesData }) => {
 
     const deleteExpense = async (id) => {
         try {
-            await axios.delete(`http://localhost:5000/api/expenses/${id}`);
+            await expensesApi.delete(id);
             setExpensesData(expensesData.filter(expense => expense.id !== id));
             setSelectedRows(prev => {
                 const newSelected = new Set(prev);
@@ -171,9 +172,7 @@ const ActualExpenses = ({ expensesData, setExpensesData }) => {
     const deleteSelectedExpenses = async () => {
         try {
             const selectedIds = Array.from(selectedRows);
-            await axios.delete('http://localhost:5000/api/expenses/bulk', {
-                data: { ids: selectedIds }
-            });
+            await expensesApi.bulkDelete(selectedIds);
 
             setExpensesData(expensesData.filter(expense => !selectedRows.has(expense.id)));
             setSelectedRows(new Set());
