@@ -14,16 +14,42 @@ import { processQBO } from '../utils/qboProcessor';
 function Dashboard() {
     const [revenueData, setRevenueData] = useState([]);
     const [expensesData, setExpensesData] = useState([]);
+    // New state for budget categories - this will be calculated from expensesData
+    const [budgetCategories, setBudgetCategories] = useState([]);
 
     useEffect(() => {
         fetchRevenueData();
         fetchExpensesData();
     }, []);
 
+    // Add this effect to update budget categories whenever expenses change
+    useEffect(() => {
+        // Group expenses by category and aggregate
+        const categories = {};
+
+        expensesData.forEach(expense => {
+            const category = expense.category || 'Miscellaneous';
+
+            if (!categories[category]) {
+                categories[category] = {
+                    name: category,
+                    expected_amount: 0,
+                    actual_amount: 0
+                };
+            }
+
+            // Sum up expected amounts for budgeting
+            categories[category].expected_amount += parseFloat(expense.expected_amount || 0);
+            // Sum up actual amounts for comparison
+            categories[category].actual_amount += parseFloat(expense.amount || 0);
+        });
+
+        setBudgetCategories(Object.values(categories));
+    }, [expensesData]);
+
     const fetchRevenueData = async () => {
         try {
             const data = await revenueApi.getAll();
-            console.log('revenue data:', data);
             setRevenueData(data);
         } catch (error) {
             console.error('Error fetching revenue data:', error);
@@ -34,7 +60,6 @@ function Dashboard() {
     const fetchExpensesData = async () => {
         try {
             const data = await expensesApi.getAll();
-            console.log('expenses data:', data);
             setExpensesData(data);
         } catch (error) {
             console.error('Error fetching expenses data:', error);
@@ -51,7 +76,7 @@ function Dashboard() {
     };
 
     const calculateTotalBudgetExpenses = () => {
-        return expensesData.reduce((total, expense) => total + parseFloat(expense.expected_amount || 0), 0);
+        return budgetCategories.reduce((total, category) => total + parseFloat(category.expected_amount || 0), 0);
     };
 
     const calculateTotalActualExpenses = () => {
@@ -130,6 +155,7 @@ function Dashboard() {
     return (
         <Box>
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                {/* Import QBO button unchanged */}
                 <input
                     accept=".qbo"
                     style={{ display: 'none' }}
@@ -145,6 +171,7 @@ function Dashboard() {
             </Box>
 
             <Grid container spacing={1} style={{ height: '80vh' }}>
+                {/* Income components remain unchanged */}
                 <Grid item xs={6} style={{ height: '50%' }}>
                     <Paper style={{ height: '100%', overflow: 'auto' }}>
                         <IncomeBudget revenueData={revenueData} setRevenueData={setRevenueData} />
@@ -155,9 +182,15 @@ function Dashboard() {
                         <ActualIncome revenueData={revenueData} setRevenueData={setRevenueData} />
                     </Paper>
                 </Grid>
+
+                {/* Updated expense components */}
                 <Grid item xs={6} style={{ height: '50%' }}>
                     <Paper style={{ height: '100%', overflow: 'auto' }}>
-                        <ExpensesBudget expensesData={expensesData} setExpensesData={setExpensesData} />
+                        <ExpensesBudget
+                            budgetCategories={budgetCategories}
+                            expensesData={expensesData}
+                            setExpensesData={setExpensesData}
+                        />
                     </Paper>
                     <ProfitSummary
                         budgetIncome={calculateTotalBudgetIncome()}
@@ -168,7 +201,10 @@ function Dashboard() {
                 </Grid>
                 <Grid item xs={6} style={{ height: '50%' }}>
                     <Paper style={{ height: '100%', overflow: 'auto' }}>
-                        <ActualExpenses expensesData={expensesData} setExpensesData={setExpensesData} />
+                        <ActualExpenses
+                            expensesData={expensesData}
+                            setExpensesData={setExpensesData}
+                        />
                     </Paper>
                 </Grid>
             </Grid>

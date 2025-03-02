@@ -9,278 +9,236 @@ import {
     TextField,
     Typography,
     Button,
-    IconButton,
     Box
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
 import { toast } from 'react-toastify';
-import { formatDateForInput, formatDateForAPI } from '../utils/dateUtils';
-// Import our API module
 import { expensesApi } from '../api/api';
 
-const ExpensesBudget = ({ expensesData, setExpensesData }) => {
-    const [selectedRows, setSelectedRows] = useState(new Set());
-    const [lastSelectedRow, setLastSelectedRow] = useState(null);
+const ExpensesBudget = ({ budgetCategories, expensesData, setExpensesData }) => {
+    const [selectedCategories, setSelectedCategories] = useState(new Set());
 
-    const handleRowClick = (id, event) => {
-        if (event.shiftKey && lastSelectedRow !== null) {
-            // Get the indices of the current and last selected rows
-            const currentIndex = expensesData.findIndex(expense => expense.id === id);
-            const lastIndex = expensesData.findIndex(expense => expense.id === lastSelectedRow);
-
-            // Determine the range of rows to select/deselect
-            const start = Math.min(currentIndex, lastIndex);
-            const end = Math.max(currentIndex, lastIndex);
-
-            // Get the rows in the range
-            const rowsInRange = expensesData.slice(start, end + 1).map(expense => expense.id);
-
-            // Determine if we're selecting or deselecting based on the current row's state
-            const isSelecting = !selectedRows.has(id);
-
-            setSelectedRows(prev => {
-                const newSelected = new Set(prev);
-
-                // Apply the same action (select/deselect) to all rows in range
-                rowsInRange.forEach(rowId => {
-                    if (isSelecting) {
-                        newSelected.add(rowId);
-                    } else {
-                        newSelected.delete(rowId);
-                    }
-                });
-
-                return newSelected;
-            });
-        } else {
-            // Regular click behavior
-            setSelectedRows(prev => {
-                const newSelected = new Set(prev);
-                if (newSelected.has(id)) {
-                    newSelected.delete(id);
-                } else {
-                    newSelected.add(id);
-                }
-                return newSelected;
-            });
-        }
-
-        // Update the last selected row
-        setLastSelectedRow(id);
+    const handleCategoryClick = (category) => {
+        setSelectedCategories(prev => {
+            const newSelected = new Set(prev);
+            if (newSelected.has(category)) {
+                newSelected.delete(category);
+            } else {
+                newSelected.add(category);
+            }
+            return newSelected;
+        });
     };
 
-    const handleExpectedAmountChange = async (id, value) => {
+    const handleExpectedAmountChange = async (categoryName, value) => {
         try {
-            await expensesApi.update(id, {
-                expected_amount: value
+            // Get all expenses in this category
+            const categoryExpenses = expensesData.filter(exp =>
+                (exp.category || 'Miscellaneous') === categoryName
+            );
+
+            if (categoryExpenses.length === 0) {
+                // If there are no expenses in this category yet, create a default one
+                const newExpense = {
+                    name: `${categoryName} Budget`,
+                    amount: 0,
+                    expected_amount: value,
+                    category: categoryName
+                };
+
+                const response = await expensesApi.create(newExpense);
+                setExpensesData([...expensesData, response]);
+                toast.success(`Created new budget for ${categoryName}`);
+                return;
+            }
+
+            // Calculate how to distribute the new budget
+            const currentTotal = categoryExpenses.reduce(
+                (sum, exp) => sum + parseFloat(exp.expected_amount || 0),
+                0
+            );
+
+            // If current total is 0, divide evenly. Otherwise, distribute proportionally.
+            const updatePromises = categoryExpenses.map(expense => {
+                let newAmount;
+
+                if (currentTotal <= 0) {
+                    // Divide evenly if current total is 0
+                    newAmount = value / categoryExpenses.length;
+                } else {
+                    // Distribute proportionally based on current expected amounts
+                    const proportion = (parseFloat(expense.expected_amount || 0) / currentTotal) || 0;
+                    newAmount = value * proportion;
+                }
+
+                // Update the API
+                return expensesApi.update(expense.id, {
+                    expected_amount: newAmount
+                });
             });
 
-            const updatedExpensesData = expensesData.map(expense =>
-                expense.id === id ? { ...expense, expected_amount: value } : expense
-            );
+            await Promise.all(updatePromises);
+
+            // Update local state
+            const updatedExpensesData = expensesData.map(expense => {
+                if ((expense.category || 'Miscellaneous') === categoryName) {
+                    let newAmount;
+
+                    if (currentTotal <= 0) {
+                        newAmount = value / categoryExpenses.length;
+                    } else {
+                        const proportion = (parseFloat(expense.expected_amount || 0) / currentTotal) || 0;
+                        newAmount = value * proportion;
+                    }
+
+                    return { ...expense, expected_amount: newAmount };
+                }
+                return expense;
+            });
+
             setExpensesData(updatedExpensesData);
-            toast.success('Updated expected amount');
+            toast.success(`Updated budget for ${categoryName}`);
         } catch (error) {
             console.error('Error updating expected amount:', error);
             toast.error('Failed to update expected amount');
         }
     };
 
-    const addNewExpense = async () => {
+    const addNewCategory = async () => {
         try {
             const newExpense = {
-                name: 'New Expense',
+                name: 'New Category Budget',
                 amount: 0,
                 expected_amount: 0,
-                date: formatDateForAPI(new Date()),
-                category: 'Miscellaneous',
-                is_recurring: false
+                category: 'New Category',
+                date: new Date().toISOString().split('T')[0]
             };
 
             const response = await expensesApi.create(newExpense);
             setExpensesData([...expensesData, response]);
-            toast.success('Added new expense');
+            toast.success('Added new budget category');
         } catch (error) {
-            console.error('Error adding new expense:', error);
-            toast.error('Failed to add new expense');
-        }
-    };
-
-    const deleteExpense = async (id) => {
-        try {
-            await expensesApi.delete(id);
-            setExpensesData(expensesData.filter(expense => expense.id !== id));
-            setSelectedRows(prev => {
-                const newSelected = new Set(prev);
-                newSelected.delete(id);
-                return newSelected;
-            });
-            toast.success('Deleted expense');
-        } catch (error) {
-            console.error('Error deleting expense:', error);
-            toast.error('Failed to delete expense');
-        }
-    };
-
-    const deleteSelectedExpenses = async () => {
-        try {
-            const selectedIds = Array.from(selectedRows);
-            await expensesApi.bulkDelete(selectedIds);
-
-            setExpensesData(expensesData.filter(expense => !selectedRows.has(expense.id)));
-            setSelectedRows(new Set());
-            toast.success('Successfully deleted selected items');
-        } catch (error) {
-            console.error('Error deleting selected expenses:', error);
-            toast.error('Failed to delete selected items');
-        }
-    };
-
-    const updateExpenseDetails = async (id, field, value) => {
-        try {
-            await expensesApi.update(id, { [field]: value });
-            const updatedExpensesData = expensesData.map(expense =>
-                expense.id === id ? { ...expense, [field]: value } : expense
-            );
-            setExpensesData(updatedExpensesData);
-            toast.success(`Updated expense ${field}`);
-        } catch (error) {
-            console.error(`Error updating expense ${field}:`, error);
-            toast.error(`Failed to update expense ${field}`);
+            console.error('Error adding new budget category:', error);
+            toast.error('Failed to add new budget category');
         }
     };
 
     const calculateTotal = () => {
-        return expensesData.reduce((total, expense) => total + parseFloat(expense.expected_amount || 0), 0);
+        return budgetCategories.reduce(
+            (total, category) => total + parseFloat(category.expected_amount || 0),
+            0
+        );
+    };
+
+    const calculateActualTotal = () => {
+        return budgetCategories.reduce(
+            (total, category) => total + parseFloat(category.actual_amount || 0),
+            0
+        );
     };
 
     return (
         <div style={{ padding: '20px' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 2 }}>
                 <Typography variant="h6">Expenses Budget</Typography>
-                {expensesData.length > 0 && (
-                    <Button
-                        variant="outlined"
-                        size="small"
-                        color={expensesData.every(expense => selectedRows.has(expense.id)) ? 'secondary' : 'primary'}
-                        onClick={() => {
-                            const allIds = new Set(expensesData.map(expense => expense.id));
-                            const areAllSelected = expensesData.every(expense => selectedRows.has(expense.id));
-                            setSelectedRows(areAllSelected ? new Set() : allIds);
-                        }}
-                    >
-                        {expensesData.every(expense => selectedRows.has(expense.id))
-                            ? 'Deselect All'
-                            : 'Select All'}
-                    </Button>
-                )}
-                <Button
-                    variant="outlined"
-                    size="small"
-                    disabled={selectedRows.size === 0}
-                    sx={{
-                        color: selectedRows.size > 0 ? '#ff9800' : 'grey',
-                        borderColor: selectedRows.size > 0 ? '#ff9800' : 'grey',
-                        '&:hover': {
-                            borderColor: '#f57c00',
-                            backgroundColor: 'rgba(255, 152, 0, 0.04)'
-                        }
-                    }}
-                    onClick={deleteSelectedExpenses}
-                >
-                    Delete Selected
-                </Button>
             </Box>
+
             <TableContainer>
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>Name</TableCell>
                             <TableCell>Category</TableCell>
                             <TableCell>Expected Amount</TableCell>
-                            <TableCell>Actions</TableCell>
+                            <TableCell>Actual Amount</TableCell>
+                            <TableCell>Variance</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {expensesData.map((expense) => (
-                            <TableRow
-                                key={expense.id}
-                                onClick={(event) => handleRowClick(expense.id, event)}
+                        {budgetCategories.map((category) => {
+                            const isOverBudget = category.actual_amount > category.expected_amount;
+                            const variance = category.actual_amount - category.expected_amount;
+
+                            return (
+                                <TableRow
+                                    key={category.name}
+                                    onClick={() => handleCategoryClick(category.name)}
+                                    sx={{
+                                        cursor: 'pointer',
+                                        backgroundColor: selectedCategories.has(category.name)
+                                            ? '#8a8a8a'
+                                            : 'inherit',
+                                        '&:hover': {
+                                            backgroundColor: '#55c9c2',
+                                        },
+                                    }}
+                                >
+                                    <TableCell>{category.name}</TableCell>
+                                    <TableCell>
+                                        <TextField
+                                            type="number"
+                                            value={category.expected_amount || ''}
+                                            onChange={(e) => {
+                                                e.stopPropagation();
+                                                handleExpectedAmountChange(
+                                                    category.name,
+                                                    parseFloat(e.target.value || 0)
+                                                );
+                                            }}
+                                            onClick={(e) => e.stopPropagation()}
+                                            variant="standard"
+                                            InputProps={{
+                                                startAdornment: '$'
+                                            }}
+                                        />
+                                    </TableCell>
+                                    <TableCell
+                                        sx={{
+                                            color: isOverBudget ? 'error.main' : 'success.main',
+                                        }}
+                                    >
+                                        ${category.actual_amount.toFixed(2)}
+                                    </TableCell>
+                                    <TableCell
+                                        sx={{
+                                            color: variance > 0 ? 'error.main' : 'success.main',
+                                        }}
+                                    >
+                                        {variance > 0 ? '+' : ''}${variance.toFixed(2)}
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
+                        <TableRow sx={{ backgroundColor: 'inherit' }}>
+                            <TableCell><strong>Total</strong></TableCell>
+                            <TableCell><strong>${calculateTotal().toFixed(2)}</strong></TableCell>
+                            <TableCell
                                 sx={{
-                                    cursor: 'pointer',
-                                    backgroundColor: selectedRows.has(expense.id) ? '#8a8a8a' : 'inherit',
-                                    '&:hover': {
-                                        backgroundColor: '#55c9c2',
-                                    },
+                                    color: calculateActualTotal() > calculateTotal() ? 'error.main' : 'success.main',
                                 }}
                             >
-                                <TableCell>
-                                    <TextField
-                                        value={expense.name}
-                                        onChange={(e) => {
-                                            e.stopPropagation();
-                                            updateExpenseDetails(expense.id, 'name', e.target.value);
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        variant="standard"
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <TextField
-                                        value={expense.category || ''}
-                                        onChange={(e) => {
-                                            e.stopPropagation();
-                                            updateExpenseDetails(expense.id, 'category', e.target.value);
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        variant="standard"
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <TextField
-                                        type="number"
-                                        value={expense.expected_amount || ''}
-                                        onChange={(e) => {
-                                            e.stopPropagation();
-                                            handleExpectedAmountChange(expense.id, e.target.value);
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        variant="standard"
-                                        InputProps={{
-                                            startAdornment: '$'
-                                        }}
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <IconButton
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            deleteExpense(expense.id);
-                                        }}
-                                        color="error"
-                                        size="small"
-                                    >
-                                        <DeleteIcon />
-                                    </IconButton>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        <TableRow sx={{ backgroundColor: 'inherit' }}>
-                            <TableCell colSpan={2}><strong>Total</strong></TableCell>
-                            <TableCell colSpan={2}>
-                                <strong>${calculateTotal().toFixed(2)}</strong>
+                                <strong>${calculateActualTotal().toFixed(2)}</strong>
+                            </TableCell>
+                            <TableCell
+                                sx={{
+                                    color: calculateActualTotal() - calculateTotal() > 0 ? 'error.main' : 'success.main',
+                                }}
+                            >
+                                <strong>
+                                    {calculateActualTotal() - calculateTotal() > 0 ? '+' : ''}
+                                    ${(calculateActualTotal() - calculateTotal()).toFixed(2)}
+                                </strong>
                             </TableCell>
                         </TableRow>
                     </TableBody>
                 </Table>
             </TableContainer>
+
             <Button
                 variant="contained"
                 color="primary"
-                onClick={addNewExpense}
+                onClick={addNewCategory}
                 style={{ marginTop: '20px' }}
             >
-                Add New Expense
+                Add New Category
             </Button>
         </div>
     );
