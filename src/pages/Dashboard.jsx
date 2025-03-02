@@ -6,10 +6,10 @@ import ExpensesBudget from '../components/ExpensesBudget';
 import ActualExpenses from '../components/ActualExpenses';
 import ProfitSummary from '../components/ProfitSummary';
 import { toast } from 'react-toastify';
-import { processCSV } from '../utils/csvProcessor';
 import { formatDateForAPI } from '../utils/dateUtils';
 // Import our API modules
 import { revenueApi, expensesApi } from '../api/api';
+import { processQBO } from '../utils/qboProcessor';
 
 function Dashboard() {
     const [revenueData, setRevenueData] = useState([]);
@@ -58,23 +58,29 @@ function Dashboard() {
         return expensesData.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
     };
 
-    const handleCSVImport = async (event) => {
+    const handleQBOImport = async (event) => {
         const file = event.target.files[0];
         if (file) {
+            // Verify file type
+            if (!file.name.toLowerCase().endsWith('.qbo')) {
+                toast.error('Please upload a QBO file.');
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = async (e) => {
-                const csvData = e.target.result;
-                const processedData = processCSV(csvData);
-
-                toast.info(`Processing ${processedData.income.length + processedData.expenses.length} items...`);
-
                 try {
-                    // Bulk import income items
+                    const qboData = e.target.result;
+                    const processedData = processQBO(qboData);
+
+                    toast.info(`Processing ${processedData.income.length + processedData.expenses.length} transactions...`);
+
+                    // Process the income items
                     if (processedData.income.length > 0) {
                         const incomeItems = processedData.income.map(income => ({
                             name: income.name,
                             amount: income.amount,
-                            expected_amount: 0, // Set default or calculate as needed
+                            expected_amount: 0,
                             date: formatDateForAPI(income.date),
                             is_recurring: income.isRecurring,
                             category: 'Income'
@@ -88,12 +94,12 @@ function Dashboard() {
                         toast.success(`Successfully imported ${newIncomeItems.length} income transactions`);
                     }
 
-                    // Bulk import expense items
+                    // Process the expense items
                     if (processedData.expenses.length > 0) {
                         const expenseItems = processedData.expenses.map(expense => ({
                             name: expense.name,
                             amount: expense.amount,
-                            expected_amount: 0, // Set default or calculate as needed
+                            expected_amount: 0,
                             date: formatDateForAPI(expense.date),
                             is_recurring: expense.isRecurring,
                             category: expense.category
@@ -107,10 +113,10 @@ function Dashboard() {
                         toast.success(`Successfully imported ${newExpenseItems.length} expense transactions`);
                     }
 
-                    toast.success('CSV import completed successfully!');
+                    toast.success('QBO import completed successfully!');
                 } catch (error) {
-                    console.error('Error during bulk import:', error);
-                    toast.error('Failed to import CSV data. Please try again or check the server logs.');
+                    console.error('Error processing QBO file:', error);
+                    toast.error('Failed to import QBO data. Please check the file format and try again.');
                 }
             };
             reader.readAsText(file);
@@ -121,15 +127,15 @@ function Dashboard() {
         <Box>
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
                 <input
-                    accept=".csv"
+                    accept=".qbo"
                     style={{ display: 'none' }}
-                    id="csv-file"
+                    id="qbo-file"
                     type="file"
-                    onChange={handleCSVImport}
+                    onChange={handleQBOImport}
                 />
-                <label htmlFor="csv-file">
+                <label htmlFor="qbo-file">
                     <Button variant="contained" component="span">
-                        Import CSV
+                        Import QBO
                     </Button>
                 </label>
             </Box>
