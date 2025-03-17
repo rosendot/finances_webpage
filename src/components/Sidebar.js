@@ -8,7 +8,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 
 const Sidebar = ({ open, onClose }) => {
     const menuItems = [
-        { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+        { text: 'Monthly Budget', icon: <DashboardIcon />, path: '/' },
         { text: 'Reports', icon: <AssessmentIcon />, path: '/reports' },
         { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
     ];
