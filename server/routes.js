@@ -24,4 +24,6 @@ router.delete('/expenses/:id', expensesController.deleteExpense);
 router.get('/monthly-data/:year', reportController.getMonthlyData);
 router.post('/monthly-report', reportController.saveMonthlyReport);
 router.get('/yearly-summary/:year', reportController.getYearlySummary);
+router.get('/category-data/:year', reportController.getCategoryData);
+
 module.exports = router;

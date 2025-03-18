@@ -90,3 +90,83 @@ exports.getYearlySummary = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+exports.getCategoryData = async (req, res) => {
+    try {
+        const { year } = req.params;
+
+        // Get basic category sums
+        const categorySumQuery = `
+            SELECT 
+                COALESCE(category, 'Uncategorized') as category,
+                SUM(amount) as amount
+            FROM expenses
+            WHERE EXTRACT(YEAR FROM date) = $1
+            GROUP BY category
+            ORDER BY amount DESC
+        `;
+
+        // Get month-by-month category data for trend analysis
+        const categoryTrendQuery = `
+            SELECT 
+                COALESCE(category, 'Uncategorized') as category,
+                EXTRACT(MONTH FROM date) as month,
+                SUM(amount) as amount
+            FROM expenses
+            WHERE EXTRACT(YEAR FROM date) = $1
+            GROUP BY category, EXTRACT(MONTH FROM date)
+            ORDER BY category, month
+        `;
+
+        // Execute both queries
+        const categorySumResult = await pool.query(categorySumQuery, [year]);
+        const categoryTrendResult = await pool.query(categoryTrendQuery, [year]);
+
+        // Process trend data to detect increases/decreases
+        const trends = {};
+        categoryTrendResult.rows.forEach(row => {
+            const { category, month, amount } = row;
+
+            if (!trends[category]) {
+                trends[category] = [];
+            }
+
+            trends[category].push({ month, amount });
+        });
+
+        // Calculate trend metrics for each category
+        const categoryData = categorySumResult.rows.map(category => {
+            const categoryTrend = trends[category.category] || [];
+
+            // Sort by month
+            categoryTrend.sort((a, b) => a.month - b.month);
+
+            // Calculate month-over-month change
+            let trendDirection = 'stable';
+            let trendPercentage = 0;
+
+            if (categoryTrend.length >= 2) {
+                const firstMonthAmount = parseFloat(categoryTrend[0].amount);
+                const lastMonthAmount = parseFloat(categoryTrend[categoryTrend.length - 1].amount);
+
+                if (firstMonthAmount > 0) {
+                    trendPercentage = ((lastMonthAmount - firstMonthAmount) / firstMonthAmount) * 100;
+                    trendDirection = trendPercentage > 5 ? 'increasing' :
+                        trendPercentage < -5 ? 'decreasing' : 'stable';
+                }
+            }
+
+            return {
+                ...category,
+                trendDirection,
+                trendPercentage,
+                monthlyData: categoryTrend
+            };
+        });
+
+        res.json(categoryData);
+    } catch (error) {
+        console.error('Error fetching category data:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
