@@ -44,7 +44,9 @@ export const expensesApi = {
 
 // Monthly data API functions (for reports)
 export const reportApi = {
-    getMonthlyData: (year) => api.get(`/monthly-data/${year}`)
+    getMonthlyData: (year) => api.get(`/monthly-data/${year}`),
+    saveMonthlyReport: (data) => api.post('/monthly-report', data),
+    getYearlySummary: (year) => api.get(`/yearly-summary/${year}`)
 };
 
 // Main export with all API namespaces

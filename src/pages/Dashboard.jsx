@@ -11,6 +11,7 @@ import { formatDateForAPI } from '../utils/dateUtils';
 // Import our API modules
 import { revenueApi, expensesApi } from '../api/api';
 import { processQBO } from '../utils/qboProcessor';
+import SaveMonthlyReportModal from '../components/SaveMonthlyReportModal';
 
 // Create a new context for managing changes
 export const ChangeContext = React.createContext();
@@ -28,6 +29,7 @@ function Dashboard() {
     const [hasChanges, setHasChanges] = useState(false);
     const [showFab, setShowFab] = useState(false);
     const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
+    const [saveReportOpen, setSaveReportOpen] = useState(false);
 
     useEffect(() => {
         fetchRevenueData();
@@ -268,7 +270,7 @@ function Dashboard() {
     return (
         <ChangeContext.Provider value={contextValue}>
             <Box>
-                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2, gap: 1 }}>
                     <input
                         accept=".qbo"
                         style={{ display: 'none' }}
@@ -281,6 +283,15 @@ function Dashboard() {
                             Import QBO
                         </Button>
                     </label>
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        startIcon={<SaveIcon />}
+                        onClick={() => setSaveReportOpen(true)}
+                        sx={{ mb: 2 }}
+                    >
+                        Save Monthly Report
+                    </Button>
                 </Box>
 
                 <Grid container spacing={1} style={{ height: '80vh' }}>
@@ -359,6 +370,16 @@ function Dashboard() {
                     </Fab>
                 )}
             </Box>
+            <SaveMonthlyReportModal
+                open={saveReportOpen}
+                onClose={() => setSaveReportOpen(false)}
+                financialData={{
+                    budgetIncome: calculateTotalBudgetIncome(),
+                    actualIncome: calculateTotalActualIncome(),
+                    budgetExpenses: calculateTotalBudgetExpenses(),
+                    actualExpenses: calculateTotalActualExpenses()
+                }}
+            />
         </ChangeContext.Provider>
     );
 }
